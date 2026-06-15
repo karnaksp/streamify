@@ -1,12 +1,185 @@
 version: 2
 
 sources:
-    - name: staging
-      database: "{{ env_var('GCP_PROJECT_ID') }}"
-      schema: streamify_stg
-      tables:
-        - name: listen_events
-        - name: page_view_events
-        - name: auth_events
-        - name: songs
-        - name: state_codes
+  - name: staging
+    database: "{{ env_var('GCP_PROJECT_ID') }}"
+    schema: streamify_stg
+    tables:
+      - name: listen_events
+      - name: page_view_events
+      - name: auth_events
+      - name: songs
+      - name: state_codes
+
+models:
+  - name: fact_streams
+    description: Stream listening fact table joined to user, song, artist, location and datetime dimensions.
+    columns:
+      - name: userKey
+        description: Surrogate key for the SCD2 user dimension row active at event time.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_users')
+              field: userKey
+      - name: artistKey
+        description: Surrogate key for the listened artist.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_artists')
+              field: artistKey
+      - name: songKey
+        description: Surrogate key for the listened song.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_songs')
+              field: songKey
+      - name: dateKey
+        description: Hour-level datetime key.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_datetime')
+              field: dateKey
+      - name: locationKey
+        description: Surrogate key for event location.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_location')
+              field: locationKey
+      - name: ts
+        description: Original listening event timestamp.
+        tests:
+          - not_null
+
+  - name: dim_users
+    description: User dimension with SCD2 rows for listening subscription level changes.
+    columns:
+      - name: userKey
+        description: Surrogate key for a user-level validity interval.
+        tests:
+          - not_null
+          - unique
+      - name: userId
+        description: Source user identifier from listen events.
+        tests:
+          - not_null
+      - name: gender
+        description: User gender as produced by Eventsim.
+        tests:
+          - accepted_values:
+              values: ['M', 'F']
+      - name: level
+        description: Subscription level tracked as SCD2 attribute.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['free', 'paid']
+      - name: rowActivationDate
+        description: First date when this SCD2 row is active.
+        tests:
+          - not_null
+      - name: rowExpirationDate
+        description: First date when this SCD2 row stops being active.
+        tests:
+          - not_null
+      - name: currentRow
+        description: Flag for the latest SCD2 row per natural user key.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+  - name: dim_songs
+    description: Song dimension from Million Song Dataset seed/source data.
+    columns:
+      - name: songKey
+        description: Surrogate key for a song.
+        tests:
+          - not_null
+          - unique
+      - name: songId
+        description: Source song identifier.
+        tests:
+          - not_null
+      - name: artistName
+        description: Normalized artist name used for fact joins.
+        tests:
+          - not_null
+      - name: title
+        description: Song title used for fact joins.
+        tests:
+          - not_null
+
+  - name: dim_artists
+    description: Artist dimension from song metadata.
+    columns:
+      - name: artistKey
+        description: Surrogate key for an artist.
+        tests:
+          - not_null
+          - unique
+      - name: name
+        description: Normalized artist name.
+        tests:
+          - not_null
+
+  - name: dim_location
+    description: Location dimension built from listen event geography and state codes.
+    columns:
+      - name: locationKey
+        description: Surrogate key for city/state/coordinate combination.
+        tests:
+          - not_null
+          - unique
+      - name: city
+        description: Event city, with NA fallback for unknown location.
+        tests:
+          - not_null
+      - name: stateCode
+        description: Two-letter state code or NA fallback.
+        tests:
+          - not_null
+      - name: stateName
+        description: Full state name or NA fallback.
+        tests:
+          - not_null
+
+  - name: dim_datetime
+    description: Hourly datetime dimension for dashboard time slicing.
+    columns:
+      - name: dateKey
+        description: UNIX seconds for the hour timestamp.
+        tests:
+          - not_null
+          - unique
+      - name: date
+        description: Hour timestamp.
+        tests:
+          - not_null
+          - unique
+      - name: weekendFlag
+        description: Weekend flag derived from day of week.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+  - name: wide_streams
+    description: Dashboard-friendly denormalized view over fact_streams and core dimensions.
+    columns:
+      - name: userKey
+        description: User dimension key inherited from fact_streams.
+        tests:
+          - not_null
+      - name: songKey
+        description: Song dimension key inherited from fact_streams.
+        tests:
+          - not_null
+      - name: timestamp
+        description: Listening event timestamp.
+        tests:
+          - not_null

@@ -1,0 +1,31 @@
+name: Data quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-dbt-quality-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate dbt quality contract
+        run: python3 scripts/validate_dbt_quality.py
+
+      - name: Compile Python files
+        run: python3 -m compileall -q airflow/dags spark_streaming scripts
+
+      - name: Validate Airflow Compose config
+        run: cd airflow && GCP_PROJECT_ID=dummy GCP_GCS_BUCKET=dummy docker compose config --quiet
+
+      - name: Validate Kafka Compose config
+        run: cd kafka && docker compose config --quiet
