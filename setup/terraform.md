@@ -1,51 +1,53 @@
-## Terraform Infra Setup
+## Terraform infra setup
 
-Clone the repository in your local machine.
+Склонируйте repository на локальную машину:
 
 ```bash
 git clone https://github.com/ankurchavda/streamify.git && \
 cd streamify/terraform
 ```
 
-Spin up the Infra -
+Поднять infrastructure:
 
-- Initiate terraform and download the required dependencies-
+- Инициализировать Terraform и скачать dependencies:
 
   ```bash
   terraform init
   ```
 
-- View the Terraform plan
+- Посмотреть Terraform plan.
 
-  You will be asked to enter two values, the name of the GCS bucket you want to create and your GCP Project ID. Use the same values throughout the project. 
+  Terraform попросит ввести два значения: имя GCS bucket и GCP Project ID. Используйте одни и те же значения на протяжении всего проекта.
 
   ```bash
   terraform plan
   ```
 
-- Terraform plan should show the creation of following services -
+- Terraform plan должен показать создание следующих resources:
 
-  - `e2-standard-4` Compute Instance for Kafka
-  - `e2-standard-4` Compute Instance for Airflow
-  - Dataproc Spark Cluster
-    - One `e2-standard-2` Master node
-    - Two `e2-medium` Worker nodes
-  - A Google Cloud Storage bucket
-  - Two Bigquery Datasets
-    - streamify_stg
-    - streamify_prod
-  - Firewall rule to open port `9092` on the Kafka Instance
+  - `e2-standard-4` Compute Instance для Kafka;
+  - `e2-standard-4` Compute Instance для Airflow;
+  - Dataproc Spark Cluster:
+    - один `e2-standard-2` Master node;
+    - два `e2-medium` Worker nodes;
+  - Google Cloud Storage bucket;
+  - два BigQuery datasets:
+    - `streamify_stg`;
+    - `streamify_prod`;
+  - Firewall rule для открытия port `9092` на Kafka Instance.
 
-- Apply the infra. **Note** - Billing will start as soon as the apply is complete.
+- Применить infrastructure.
+
+  **Note:** billing начнется сразу после `terraform apply`.
 
   ```bash
   terraform apply
   ```
 
-- Once you are done with the project. Teardown the infra using-
+- После завершения работы удалить infrastructure:
 
   ```bash
   terraform destroy
   ```
 
-**Note:** The infra was setup a tad generously, you might not actually be fully utilizing the compute power. Feel free to reduce the instance sizes and test.
+**Note:** infrastructure настроена достаточно щедро. Если compute power используется не полностью, можно уменьшить instance sizes и протестировать повторно.

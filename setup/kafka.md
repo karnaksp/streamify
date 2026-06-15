@@ -1,80 +1,82 @@
-## Setup Kafka VM
+## Настройка Kafka VM
 
 ![kafka](../images/kafka.jpg)
 
-We will setup Kafka and eventsim in two separate docker processes in a dedicated compute instance. Eventsim will communicate with port `9092` of the `broker` container of Kafka to send events.
+Kafka и Eventsim запускаются как два отдельных Docker process на выделенной compute instance. Eventsim отправляет события в `broker` container Kafka на port `9092`.
 
-- Establish SSH connection
+- Подключиться по SSH:
 
   ```bash
   ssh streamify-kafka
   ```
 
-- Clone git repo and cd into Kafka folder
+- Склонировать repository и перейти в Kafka folder:
 
   ```bash
   git clone https://github.com/ankurchavda/streamify.git && \
+  cd streamify/kafka
   ```
 
-- Install anaconda, docker & docker-compose.
+- Установить anaconda, docker и docker-compose:
 
   ```bash
   bash ~/streamify/scripts/vm_setup.sh && \
   exec newgrp docker
   ```
 
-- Set the evironment variables -
+- Установить environment variable:
 
-  - External IP of the Kafka VM
+  - External IP Kafka VM:
 
     ```bash
     export KAFKA_ADDRESS=IP.ADD.RE.SS
     ```
 
-     **Note**: You will have to setup these env vars every time you create a new shell session. Or if you stop/start your VM
+  **Note:** эти env vars нужно задавать в каждой новой shell session или после stop/start VM.
 
-- Start Kafka 
+- Запустить Kafka:
 
   ```bash
   cd ~/streamify/kafka && \
   docker-compose build && \
-  docker-compose up 
+  docker-compose up
   ```
 
-  **Note**: Sometimes the `broker` & `schema-registry` containers die during startup. You should just stop all the containers with `docker-compose down` and then rerun `docker-compose up`.
+  **Note:** иногда containers `broker` и `schema-registry` падают при startup. Остановите все containers через `docker-compose down`, затем повторите `docker-compose up`.
 
-- The Kafka Control Center should be available on port `9021`. Open and check if everything is working fine.
+- Kafka Control Center должен быть доступен на port `9021`. Откройте UI и проверьте, что сервисы работают.
 
-- Open another terminal session for the Kafka VM and start sending messages to your Kafka broker with Eventsim
+- Откройте еще одну terminal session для Kafka VM и запустите Eventsim:
 
   ```bash
   bash ~/streamify/scripts/eventsim_startup.sh
   ```
 
-  This will start creating events for 1 Million users spread out from the current time to the next 24 hours. 
-  The container will run in detached mode. Follow the logs to see the progress.
+  Скрипт начнет создавать events для 1 million users на интервале от текущего времени до следующих 24 часов. Container работает в detached mode.
 
-- To follow the logs
+- Смотреть logs:
 
   ```bash
   docker logs --follow million_events
   ```
 
-- The messages should start flowing-in in a few minutes.
-  
-- You should see four topics -
+- Через несколько минут messages должны начать поступать в Kafka.
 
-  - listen_events
-  - page_view_events
-  - auth_events
-  - status_change_events
+- Ожидаемые topics:
+
+  - `listen_events`
+  - `page_view_events`
+  - `auth_events`
+  - `status_change_events`
+
   ![topics](../images/topics.png)
 
-- **Note:** If you happen to re-rerun the evenstim container and face the following error -
-  
-  >docker: Error response from daemon: Conflict. The container name "/million_events" is already in use by container
-  
-  then run the below command
+- **Note:** если при повторном запуске Eventsim появляется ошибка:
+
+  > docker: Error response from daemon: Conflict. The container name "/million_events" is already in use by container
+
+  выполните:
+
   ```bash
   docker system prune
   ```
