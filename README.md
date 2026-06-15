@@ -4,7 +4,7 @@ A data pipeline with Kafka, Spark Streaming, dbt, Docker, Airflow, Terraform, GC
 
 ## Слой Качества Данных
 
-Streamify нужен, чтобы построить потоковую аналитику музыкального сервиса: события из Kafka обрабатываются Spark Streaming, складываются в lake/warehouse, а dbt собирает витрины для dashboard по прослушиваниям, пользователям, песням, артистам, локациям и времени.
+Streamify нужен, чтобы построить потоковую аналитику музыкального сервиса: события из Kafka обрабатываются Spark Streaming, складываются в lake/warehouse, а dbt собирает таблицы для dashboard по прослушиваниям, пользователям, песням, артистам, локациям и времени.
 
 В этой итерации добавлен проверяемый data-quality слой для core marts:
 
@@ -100,9 +100,7 @@ A lot can still be done :).
   - Confluent Cloud for Kafka
 - Create your own VPC network
 - Build dimensions and facts incrementally instead of full refresh
-- Write data quality tests
 - Create dimensional models for additional business processes
-- Include CI/CD
 - Add more visualizations
 
 ### Special Mentions

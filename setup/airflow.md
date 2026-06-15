@@ -1,59 +1,62 @@
-## Setup Airflow VM
+## Настройка Airflow VM
 
 ![airflow](../images/airflow.jpg)
 
-We will setup airflow on docker in a dedicated compute instance. dbt is setup inside airflow.
+Airflow запускается в Docker на выделенной compute instance. dbt находится внутри Airflow runtime и запускается DAG-ом.
 
-- Establish SSH connection
+- Подключиться по SSH:
 
   ```bash
   ssh streamify-airflow
   ```
 
-- Clone git repo
+- Склонировать repository:
 
   ```bash
   git clone https://github.com/ankurchavda/streamify.git && \
   cd streamify
   ```
-- Install anaconda, docker & docker-compose.
+
+- Установить anaconda, docker и docker-compose:
 
   ```bash
   bash ~/streamify/scripts/vm_setup.sh && \
   exec newgrp docker
   ```
-- Move the service account json file from local to the VM machine in `~/.google/credentials/` directory.  Make sure it is named as `google_credentials.json`  else the dags will fail!
 
-  - You can use [sftp](https://youtu.be/ae-CV2KfoN0?t=2442) to transfer the file.
+- Перенести service account json file с локальной машины на VM в directory `~/.google/credentials/`.
 
-- Set the evironment variables (same as Terraform values)-
+  Файл должен называться `google_credentials.json`, иначе DAGs не смогут использовать credentials.
 
-  - GCP Project ID
+  - Для передачи файла можно использовать [sftp](https://youtu.be/ae-CV2KfoN0?t=2442).
 
-  - Cloud Storage Bucket Name
+- Установить environment variables, совпадающие со значениями Terraform:
+
+  - GCP Project ID;
+  - Cloud Storage Bucket Name.
 
     ```bash
     export GCP_PROJECT_ID=project-id
     export GCP_GCS_BUCKET=bucket-name
     ```
 
-    **Note**: You will have to setup these env vars every time you create a new shell session.
+  **Note:** эти env vars нужно задавать в каждой новой shell session.
 
-- Start Airflow. (This shall take a few good minutes, grab a coffee!)
+- Запустить Airflow. Это может занять несколько минут:
 
   ```bash
   bash ~/streamify/scripts/airflow_startup.sh && cd ~/streamify/airflow
   ```
 
-- Airflow should be available on port `8080` a couple of minutes after the above setup is complete. Login with default username & password as **airflow**.
+- Через пару минут Airflow должен быть доступен на port `8080`. Default username и password: **airflow**.
 
-- Airflow will be running in detached mode. To see the logs from docker run the below command
+- Airflow работает в detached mode. Чтобы смотреть Docker logs:
 
   ```bash
-  docker-compose --follow
+  docker-compose logs --follow
   ```
 
-- To stop airflow
+- Остановить Airflow:
 
   ```bash
   docker-compose down
@@ -61,30 +64,35 @@ We will setup airflow on docker in a dedicated compute instance. dbt is setup in
 
 ### DAGs
 
-The setup has two dags
+В setup есть два DAGs:
+
 - `load_songs_dag`
-  - Trigger first and only once to load a onetime song file into BigQuery
+  - Запустить первым и только один раз, чтобы загрузить one-time song file в BigQuery.
+
 ![songs_dag](../images/songs_dag.png)
 
 - `streamify_dag`
-  - Trigger after `load_songs_dag` to make sure the songs table table is available for the transformations
-  - This dag will run hourly at the 5th minute and perform transformations to create the dimensions and fact.
+  - Запускать после `load_songs_dag`, чтобы songs table была доступна для transformations.
+  - DAG запускается каждый час на пятой минуте и создает dimensions и fact.
+
 ![streamify_dag](../images/streamify_dag.png)
 
-  - DAG Flow -
-    - We first create an external table for the data that was received in the past hour.
-    - We then create an empty table to which our hourly data will be appended. Usually, this will only ever run in the first run.
-    - Then we insert or append the hourly data, into the table.
-    - And then, delete the external table.
-    - Finally, run the dbt transformation, to create our dimensions and facts.
+DAG flow:
+
+- создать external table для данных, полученных за последний час;
+- создать empty table, куда будет append-иться hourly data; обычно это требуется только на первом run;
+- insert/append hourly data в table;
+- удалить external table;
+- запустить dbt transformation для создания dimensions и facts.
 
 ### dbt
 
-The transformations happen using dbt which is triggered by Airflow. The dbt lineage should look something like this -
+Transformations выполняются через dbt, который запускается Airflow. dbt lineage должен выглядеть примерно так:
 
 ![img](../images/dbt.png)
 
 Dimensions:
+
 - `dim_artists`
 - `dim_songs`
 - `dim_datetime`
@@ -92,8 +100,11 @@ Dimensions:
 - `dim_users`
 
 Facts:
+
 - `fact_streams`
   - Partitioning:
-    - Data is partitioned on the timestamp column by hour to provide faster data updates for a dashboard that shows data for the last few hours.
+    - Data partitioned by timestamp column by hour, чтобы dashboard быстрее обновлял данные за последние часы.
 
-Finally, we create `wide_stream` view to aid dashboarding.
+Итоговая view для dashboarding:
+
+- `wide_stream`

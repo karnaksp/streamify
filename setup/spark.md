@@ -1,35 +1,35 @@
-## Setup Spark Cluster
+## Настройка Spark Cluster
 
 ![spark](../images/spark.jpg)
 
-We will start the Spark Streaming process in the DataProc cluster we created to communicate with the Kafka VM instance over the port `9092`. Remember, we opened port 9092 for it to be able to accept connections.
+Spark Streaming process запускается в Dataproc cluster и читает Kafka VM по port `9092`. Firewall rule для `9092` создается на этапе Terraform setup.
 
-- Establish SSH connection to the **master node**
+- Подключиться по SSH к **master node**:
 
   ```bash
   ssh streamify-spark
-  
-- Clone git repo
+  ```
+
+- Склонировать repository:
 
   ```bash
   git clone https://github.com/ankurchavda/streamify.git && \
   cd streamify/spark_streaming
   ```
 
-- Set the evironment variables -
+- Установить environment variables:
 
-  - External IP of the Kafka VM so that spark can connect to it
-
-  - Name of your GCS bucket. (What you gave during the terraform setup)
+  - External IP Kafka VM, чтобы Spark мог подключиться к Kafka;
+  - GCS bucket name, заданный при Terraform setup.
 
     ```bash
     export KAFKA_ADDRESS=IP.ADD.RE.SS
     export GCP_GCS_BUCKET=bucket-name
     ```
 
-     **Note**: You will have to setup these env vars every time you create a new shell session. Or if you stop/start your cluster
+  **Note:** эти env vars нужно задавать в каждой новой shell session или после stop/start cluster.
 
-- Start reading messages
+- Начать чтение messages:
 
   ```bash
   spark-submit \
@@ -37,10 +37,10 @@ We will start the Spark Streaming process in the DataProc cluster we created to 
   stream_all_events.py
   ```
 
-- If all went right, you should see new `parquet` files in your bucket! That is Spark writing a file every two minutes for each topic.
+- Если все прошло успешно, в bucket появятся новые `parquet` files. Spark пишет file каждые две минуты для каждого topic.
 
-- Topics we are reading from
+- Topics, которые читает Spark:
 
-  - listen_events
-  - page_view_events
-  - auth_events
+  - `listen_events`
+  - `page_view_events`
+  - `auth_events`
