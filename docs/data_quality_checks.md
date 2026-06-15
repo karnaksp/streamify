@@ -2,6 +2,16 @@
 
 Streamify строит потоковую аналитику музыкального сервиса: Kafka принимает события, Spark Streaming пишет их в lake, Airflow запускает batch-слой, а dbt собирает core marts для dashboard. Этот документ фиксирует data-quality слой для dbt core marts и Airflow gate, который проверяет, что факты прослушиваний не теряют связи с измерениями.
 
+## Мой вклад в этом fork
+
+Добавленный слой не меняет исходную идею streaming pipeline. Он делает аналитический слой проверяемым:
+
+- dbt core marts получили schema tests и singular tests;
+- SCD2 dimension `dim_users` проверяется на пересечения интервалов и единственную current row;
+- `fact_streams` проверяется на orphan dimension keys;
+- Airflow DAG запускает `dbt build`, чтобы models и tests проходили одним quality gate;
+- CI проверяет, что README, документация, dbt tests и Airflow DAG остаются синхронизированными.
+
 ## Что Проверяется
 
 | Layer | Проверка | Зачем |
