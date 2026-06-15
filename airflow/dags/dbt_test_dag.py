@@ -1,25 +1,35 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 
 default_args = {
-    'owner' : 'airflow'
+    'owner': 'airflow'
 }
 
 with DAG(
-    dag_id = 'dbt_test',
-    default_args = default_args,
-    description = 'Test dbt',
-    schedule_interval="@once", #At the 5th minute of every hour
+    dag_id='dbt_quality_gate',
+    default_args=default_args,
+    description='Run dbt dependencies and core data quality checks',
+    schedule_interval="@once",
     start_date=datetime(2022,3,20),
-    catchup=True,
+    catchup=False,
     tags=['streamify', 'dbt']
 ) as dag:
 
-    dbt_test_task = BashOperator(
-        task_id = "dbt_test",
-        bash_command = "cd /dbt && dbt deps && dbt compile --profiles-dir ."
+    dbt_deps = BashOperator(
+        task_id="dbt_deps",
+        bash_command="cd /dbt && dbt deps",
+        execution_timeout=timedelta(minutes=10),
     )
 
-    dbt_test_task
+    dbt_build_core = BashOperator(
+        task_id="dbt_build_core",
+        bash_command=(
+            "cd /dbt && "
+            "dbt build --select core --profiles-dir . --target prod"
+        ),
+        execution_timeout=timedelta(minutes=30),
+    )
+
+    dbt_deps >> dbt_build_core

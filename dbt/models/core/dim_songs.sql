@@ -1,6 +1,6 @@
 {{ config(materialized = 'table') }}
 
-SELECT {{ dbt_utils.surrogate_key(['songId']) }} AS songKey,
+SELECT {{ dbt_utils.generate_surrogate_key(['songId']) }} AS songKey,
        *
 FROM (
 

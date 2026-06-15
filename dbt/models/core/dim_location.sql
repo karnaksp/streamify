@@ -1,6 +1,6 @@
 {{ config(materialized = 'table') }}
 
-SELECT {{ dbt_utils.surrogate_key(['latitude', 'longitude', 'city', 'stateName']) }} as locationKey,
+SELECT {{ dbt_utils.generate_surrogate_key(['latitude', 'longitude', 'city', 'stateName']) }} as locationKey,
 *
 FROM
     (

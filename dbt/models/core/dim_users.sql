@@ -4,7 +4,7 @@
 -- The below query is constructed to accommodate changing levels from free to paid and maintaining the latest state of the user along with
 -- historical record of the user's level
 
-SELECT {{ dbt_utils.surrogate_key(['userId', 'rowActivationDate', 'level']) }} as userKey, *
+SELECT {{ dbt_utils.generate_surrogate_key(['userId', 'rowActivationDate', 'level']) }} as userKey, *
 FROM
 (
 SELECT CAST(userId AS BIGINT) as userId, firstName, lastName, gender, level, CAST(registration as BIGINT) as registration, minDate as rowActivationDate,

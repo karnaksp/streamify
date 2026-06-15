@@ -2,6 +2,27 @@
 
 A data pipeline with Kafka, Spark Streaming, dbt, Docker, Airflow, Terraform, GCP and much more!
 
+## Слой Качества Данных
+
+Streamify нужен, чтобы построить потоковую аналитику музыкального сервиса: события из Kafka обрабатываются Spark Streaming, складываются в lake/warehouse, а dbt собирает витрины для dashboard по прослушиваниям, пользователям, песням, артистам, локациям и времени.
+
+В этой итерации добавлен проверяемый data-quality слой для core marts:
+
+- добавлен dbt data-quality слой для core marts: `not_null`, `unique`, `relationships`, `accepted_values`;
+- добавлены singular tests для SCD2 user dimension и orphan dimension keys в `fact_streams`;
+- Airflow DAG теперь запускает `dbt build --select core --profiles-dir . --target prod`, а не только `dbt compile`;
+- добавлена русская документация [docs/data_quality_checks.md](docs/data_quality_checks.md);
+- добавлен CI/static validator `scripts/validate_dbt_quality.py` для проверки dbt quality contract без GCP credentials.
+
+Локальная проверка:
+
+```bash
+python3 scripts/validate_dbt_quality.py
+python3 -m compileall -q airflow/dags spark_streaming scripts
+cd airflow && GCP_PROJECT_ID=dummy GCP_GCS_BUCKET=dummy docker compose config --quiet
+cd ../kafka && docker compose config --quiet
+```
+
 ## Description
 
 ### Objective
