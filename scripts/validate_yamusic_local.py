@@ -130,7 +130,7 @@ def main() -> int:
 
     require_markers(
         "README.md",
-        ["Yandex Music", "DuckDB", "make help", "make status", "make ingest-sample", "make acceptance-real", "make dashboard", "taste changes", "`local` profile", "DBT_THREADS=1", "scripts/run_with_dotenv.py", "make clean-local", "dbt `target`/`logs`/`dbt_packages`", "make readiness-real", "make up-local", "make compose-smoke-real", "make snapshot", "make recommendations", "make pages-site", "GitHub Pages", "streamify_snapshot.json", "data/recommendations", "Optional Location Enrichment", "Atlas"],
+        ["Яндекс Музыки", "DuckDB", "make help", "make status", "make ingest-sample", "make acceptance-real", "make dashboard", "как меняется вкус", "`local`", "DBT_THREADS=1", "scripts/run_with_dotenv.py", "make clean-local", "dbt `target`/`logs`/`dbt_packages`", "make readiness-real", "make up-local", "make compose-smoke-real", "make snapshot", "make recommendations", "make pages-site", "GitHub Pages", "streamify_snapshot.json", "data/recommendations", "География И Карты", "Atlas", "docs/assets/dashboard-story.png", "docs/assets/dashboard-atlas.png", "docs/assets/dashboard-actions.png"],
     )
     require_markers(
         "docs/yandex_music_local.md",
@@ -164,7 +164,7 @@ def main() -> int:
     require_markers(".github/PULL_REQUEST_TEMPLATE.md", ["Product Value", "Data Engineering Impact", "make test", "make acceptance-real"])
     require_markers("docs/project_management.md", ["Agent Lanes", "Repo/Build", "Yandex Ingestion", "QA/Integration", "v0.1.0-local-mvp"])
     require_markers("docs/release_process.md", ["Release Checklist", "GitHub Pages", "sample metadata", "git tag vX.Y.Z"])
-    require_markers("scripts/build_pages_site.py", ["PUBLIC_DIR", "Product Overview", "Atlas + Location", "streamify_summary.md", "location.html", "doc-card", "metric-strip", "inline_markdown", "index.html"])
+    require_markers("scripts/build_pages_site.py", ["PUBLIC_DIR", "Главная", "Дашборд", "Atlas + Гео", "streamify_summary.md", "dashboard.html", "location.html", "hero-visual", "side-link", "media-frame", "inline_markdown", "docs/assets/", "assets/", "index.html"])
     require_markers("scripts/yamusic_token_help.py", ["TOKEN_HELPER_URL", "supports_device_auth", "token_configured", "make preflight", "make acceptance-real"])
     require_markers("scripts/check_no_local_sensitive_artifacts.py", ["FORBIDDEN_TRACKED_PATHS", "data/raw/yamusic", "DuckDB files", "audio artifacts are tracked"])
     require_markers("scripts/check_no_audio_artifacts.py", ["AUDIO_EXTENSIONS", "must not store audio files"])
