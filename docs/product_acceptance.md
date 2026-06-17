@@ -8,7 +8,7 @@ This document maps the MVP requirements to concrete repository artifacts and ver
 | --- | --- | --- |
 | Fully local run without GCP | `Makefile`, `docker-compose.local.yml`, `dbt/profiles.yml` local DuckDB target | `make acceptance-local`, `make compose-smoke-local` |
 | Local operator entrypoint | `make help` lists sample, real-account, Docker, export, readiness and cleanup commands | `make help` |
-| Docker Compose local product path | `docker-compose.local.yml` `local` profile with one-shot build, dashboard services, `set -euo pipefail`, real-source readiness enforcement when a token is configured, and compose smoke validation of raw/product/dashboard artifacts | `make up-local`, `make compose-smoke-local` |
+| Docker Compose local product path | `docker-compose.local.yml` `local` profile with one-shot build, dashboard services, `set -euo pipefail`, real-source readiness enforcement when a token is configured, and compose smoke validation of raw/product/dashboard artifacts | `make up-local`, `make compose-smoke-local`, `make compose-smoke-real` |
 | Yandex Music metadata ingestion | `yamusic_ingest/__main__.py`, `yamusic_ingest/yandex_client.py`; liked tracks, owned playlists, liked playlists, liked albums and liked artists where exposed by the API | `make preflight`, `make ingest`, `make acceptance-real` |
 | No audio download or storage | metadata-only adapter, `.gitignore`, safety scripts | `scripts/check_no_audio_artifacts.py`, `scripts/check_no_local_sensitive_artifacts.py` |
 | Raw normalized outputs | `tracks`, `artists`, `albums`, `playlists`, `playlist_tracks`, `user_library_events` JSONL/Parquet writers | `make ingest-sample`, `make raw-contract` |

@@ -275,6 +275,26 @@ def test_status_payload_reports_broken_manifest_without_failing(tmp_path, monkey
     assert payload["manifest_read_error"] == "JSONDecodeError"
 
 
+def test_token_help_reports_configuration_without_printing_token() -> None:
+    env = os.environ.copy()
+    env["YANDEX_MUSIC_TOKEN"] = "secret-token-for-test"
+    result = subprocess.run(
+        [sys.executable, "scripts/yamusic_token_help.py", "--json"],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["token_configured"] is True
+    assert payload["supports_token_only_client"] is True
+    assert payload["recommended_helper"] == "https://github.com/MarshalX/yandex-music-token"
+    assert "secret-token-for-test" not in result.stdout
+
+
 @dataclass
 class FakeLikesResponse:
     tracks: list[object]

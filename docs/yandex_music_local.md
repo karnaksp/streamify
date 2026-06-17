@@ -32,7 +32,7 @@ make dashboard
 
 Streamify does not ask for your Yandex password and does not fetch a token by itself. The installed `yandex-music` Python client accepts an existing OAuth token through `Client(token).init()`, but version 2.2.0 does not expose a `device_auth` helper.
 
-Run `make token-help` for the short in-repo reminder.
+Run `make token-help` for the in-repo token setup helper. It checks whether `.env` exists, whether a token is configured, the installed `yandex-music` client version and whether that client exposes a built-in device auth flow. It never prints token values.
 
 Use an external Yandex Music OAuth token helper, then paste only the resulting token into the local `.env` file:
 
@@ -68,6 +68,12 @@ For an automated Docker smoke test that does not call a real account, run:
 
 ```bash
 make compose-smoke-local
+```
+
+After `YANDEX_MUSIC_TOKEN` is configured, verify the same Docker Compose profile against real account metadata:
+
+```bash
+make compose-smoke-real
 ```
 
 The local dbt command is:

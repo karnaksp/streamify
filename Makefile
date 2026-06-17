@@ -6,7 +6,7 @@ VENV_STREAMLIT := $(VENV)/bin/streamlit
 ENV_RUN := $(VENV_PYTHON) scripts/run_with_dotenv.py
 DBT_PROFILES_DIR ?= dbt
 
-.PHONY: help setup token-help status ingest ingest-sample preflight dbt-deps dbt-build dashboard dashboard-smoke doctor report snapshot recommendations readiness readiness-real real-gate-smoke product-answers-smoke pages-site acceptance-local acceptance-real compose-smoke-local test up-local compose-check clean-local
+.PHONY: help setup token-help status ingest ingest-sample preflight dbt-deps dbt-build dashboard dashboard-smoke doctor report snapshot recommendations readiness readiness-real real-gate-smoke product-answers-smoke pages-site acceptance-local acceptance-real compose-smoke-local compose-smoke-real test up-local compose-check clean-local
 
 help:
 	@printf '%s\n' 'Streamify local Yandex Music self-analytics'
@@ -25,6 +25,7 @@ help:
 	@printf '%s\n' 'Docker Compose local profile:'
 	@printf '%s\n' '  make up-local'
 	@printf '%s\n' '  make compose-smoke-local'
+	@printf '%s\n' '  make compose-smoke-real    # requires YANDEX_MUSIC_TOKEN'
 	@printf '%s\n' ''
 	@printf '%s\n' 'Useful checks and exports:'
 	@printf '%s\n' '  make raw-contract     Validate raw JSONL/manifest contracts'
@@ -42,18 +43,7 @@ setup:
 	$(MAKE) dbt-deps
 
 token-help:
-	@printf '%s\n' 'Streamify needs a ready Yandex Music OAuth token in .env:'
-	@printf '%s\n' '  YANDEX_MUSIC_TOKEN=...'
-	@printf '%s\n' ''
-	@printf '%s\n' 'The installed yandex-music client only accepts a token; it does not obtain one.'
-	@printf '%s\n' 'Use an external Yandex Music OAuth token helper, then paste the token into .env.'
-	@printf '%s\n' ''
-	@printf '%s\n' 'Known community helper:'
-	@printf '%s\n' '  https://github.com/MarshalX/yandex-music-token'
-	@printf '%s\n' ''
-	@printf '%s\n' 'After saving .env, run:'
-	@printf '%s\n' '  make preflight'
-	@printf '%s\n' '  make acceptance-real'
+	$(ENV_RUN) -- $(VENV_PYTHON) scripts/yamusic_token_help.py
 
 status:
 	$(ENV_RUN) -- $(VENV_PYTHON) -m yamusic_ingest --status
@@ -118,6 +108,9 @@ acceptance-real: preflight ingest raw-contract dbt-build doctor report readiness
 
 compose-smoke-local:
 	$(ENV_RUN) -- $(VENV_PYTHON) scripts/smoke_compose_local.py
+
+compose-smoke-real:
+	$(ENV_RUN) -- $(VENV_PYTHON) scripts/smoke_compose_local.py --use-env-token
 
 test:
 	$(VENV_PYTHON) scripts/validate_dbt_quality.py

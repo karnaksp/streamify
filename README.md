@@ -45,7 +45,7 @@ make dashboard
 Local defaults:
 
 - command guide: `make help`
-- token guide: `make token-help`
+- token guide: `make token-help`, which checks `.env`, installed `yandex-music` capabilities, and next steps without printing token values.
 - raw metadata: `data/raw/yamusic/*.jsonl`
 - local warehouse: `data/streamify.duckdb`
 - local configuration: `.env` is loaded by the Python CLI/scripts and by `scripts/run_with_dotenv.py` for Makefile commands, so token and path overrides work without Make parsing token values.
@@ -66,6 +66,7 @@ Local defaults:
 - safety guard: `scripts/check_no_local_sensitive_artifacts.py` keeps root `.env`, Yandex raw data, DuckDB files and local audio out of git.
 - raw schema contract: `make raw-contract`
 - Docker Compose smoke: `make compose-smoke-local`
+- real-account Docker Compose smoke: `make compose-smoke-real`, after `YANDEX_MUSIC_TOKEN` is set.
 - one-command container path: `make up-local`, which loads `.env` through `scripts/run_with_dotenv.py` and runs Docker Compose with the `local` profile. It uses real Yandex Music metadata when `YANDEX_MUSIC_TOKEN` is present in `.env`, otherwise it writes deterministic sample metadata.
 - local reset: `make clean-local` removes generated raw metadata, DuckDB databases, summary/snapshot/recommendations reports, dbt target/logs/packages, and smoke-test artifacts while preserving `.env` and source files.
 
