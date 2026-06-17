@@ -47,55 +47,63 @@ def main() -> int:
     if app.exception:
         fail(f"dashboard emitted st.exception elements: {values(app.exception)}")
 
-    require_contains(values(app.title), ["Streamify Self-Analytics"], "title")
-    require_contains(
-        values(app.caption),
-        ["Local Yandex Music metadata analytics. Audio is not downloaded or stored."],
-        "caption",
-    )
     require_contains(
         labels(app.metric),
         [
             "Tracks",
-            "Liked",
             "Artists",
             "Playlists",
-            "Hours",
+            "Library hours",
             "Source",
             "Raw tracks",
-            "Known genres",
-            "Active months",
-            "Underrated tracks",
-            "Underrated playlists",
-            "Top artist concentration",
+            "Fetch failures",
+            "Duplicate skips",
+            "Stale",
+            "Filtered rediscovery tracks",
+            "Tracks in focus",
+            "Liked in focus",
+            "Zero-playlist",
+            "Artist location rows",
+            "User location rows",
         ],
         "metrics",
     )
     require_contains(
         labels(app.tabs),
-        ["Overview", "Periods", "Artists", "Genres", "Playlists", "Tracks", "Actions", "Data Quality"],
+        ["Story", "Taste Map", "Atlas", "Mix Shift", "Rediscovery", "Playlists", "Explorer", "Actions", "Data Quality"],
         "tabs",
     )
     require_contains(
         values(app.subheader),
         [
-            "Library snapshot",
-            "Activity periods",
-            "Genre shifts",
-            "Artist affinity",
+            "What stands out",
+            "Activity timeline",
+            "Genre fingerprint",
+            "Artist gravity",
             "Genre diversity",
-            "Playlist coverage",
-            "Playlist overlap",
-            "Repeated and underrated tracks",
-            "Next actions",
+            "Genre Atlas",
+            "Monthly Rhythm",
+            "Music Time Travel",
+            "Playlist Subway",
+            "Playlist DNA",
+            "Geo Atlas readiness",
+            "Genre heatmap",
+            "Release-era mix",
+            "Focus genre mix",
             "Rediscovery queue",
-            "Playlist cleanup candidates",
+            "Rediscovery quadrants",
+            "Repeat signals",
+            "Playlist health",
+            "Playlist overlap",
+            "Explorer",
+            "Next actions",
+            "Action previews",
             "Local data quality signals",
         ],
         "sections",
     )
     if len(app.dataframe) < 8:
-        fail(f"dashboard should expose multiple analytical dataframes, found {len(app.dataframe)}")
+        fail(f"dashboard should keep audit dataframes available in expanders, found {len(app.dataframe)}")
     if not app.json:
         fail("dashboard Data Quality tab should expose a JSON quality block")
 

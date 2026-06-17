@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import os
 import socket
 import subprocess
@@ -69,13 +70,33 @@ def run_host_check(args: list[str], env: dict[str, str]) -> None:
         raise RuntimeError(f"host validation failed for {' '.join(args)}:\n{output}")
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Smoke test the local Docker Compose product profile.")
+    parser.add_argument(
+        "--use-env-token",
+        action="store_true",
+        help="Use YANDEX_MUSIC_TOKEN from the environment and require real-account readiness.",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
+    args = parse_args()
     port = free_port()
     url = f"http://127.0.0.1:{port}"
     env = os.environ.copy()
     env["STREAMIFY_DASHBOARD_PORT"] = str(port)
-    # Compose smoke must be deterministic and must not call a real account.
-    env["YANDEX_MUSIC_TOKEN"] = ""
+    if args.use_env_token:
+        if not env.get("YANDEX_MUSIC_TOKEN"):
+            print("ERROR: --use-env-token requires YANDEX_MUSIC_TOKEN in the environment or .env.", file=sys.stderr)
+            return 2
+        readiness_args = ["scripts/audit_yamusic_readiness.py", "--require-real"]
+        mode = "Yandex Music metadata"
+    else:
+        # Default compose smoke must be deterministic and must not call a real account.
+        env["YANDEX_MUSIC_TOKEN"] = ""
+        readiness_args = ["scripts/audit_yamusic_readiness.py"]
+        mode = "sample metadata"
 
     try:
         run_compose(["up", "--build", "-d", "dashboard"], env)
@@ -85,7 +106,7 @@ def main() -> int:
         assert_no_runtime_failures(logs.stdout + logs.stderr)
         for check_args in [
             ["scripts/validate_yamusic_raw_contract.py"],
-            ["scripts/audit_yamusic_readiness.py"],
+            readiness_args,
             ["scripts/smoke_product_answers.py"],
             ["scripts/smoke_dashboard_content.py"],
         ]:
@@ -102,7 +123,7 @@ def main() -> int:
     finally:
         run_compose(["down", "--remove-orphans"], env, check=False)
 
-    print(f"OK: docker compose local profile returned HTTP 200 at {url} and produced valid local product artifacts.")
+    print(f"OK: docker compose local profile returned HTTP 200 at {url} and produced valid local product artifacts from {mode}.")
     return 0
 
 

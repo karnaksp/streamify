@@ -32,7 +32,7 @@ make dashboard
 
 Streamify does not ask for your Yandex password and does not fetch a token by itself. The installed `yandex-music` Python client accepts an existing OAuth token through `Client(token).init()`, but version 2.2.0 does not expose a `device_auth` helper.
 
-Run `make token-help` for the short in-repo reminder.
+Run `make token-help` for the in-repo token setup helper. It checks whether `.env` exists, whether a token is configured, the installed `yandex-music` client version and whether that client exposes a built-in device auth flow. It never prints token values.
 
 Use an external Yandex Music OAuth token helper, then paste only the resulting token into the local `.env` file:
 
@@ -68,6 +68,12 @@ For an automated Docker smoke test that does not call a real account, run:
 
 ```bash
 make compose-smoke-local
+```
+
+After `YANDEX_MUSIC_TOKEN` is configured, verify the same Docker Compose profile against real account metadata:
+
+```bash
+make compose-smoke-real
 ```
 
 The local dbt command is:
@@ -128,7 +134,9 @@ The local marts are designed around practical self-analytics questions:
 - underrated playlists: high-uniqueness, low-overlap playlists in `yamusic_playlist_signals`;
 - playlist overlap: pairwise Jaccard similarity in `yamusic_playlist_overlap`.
 
-The dashboard includes sidebar filters for genre, liked state and track/artist/album search. These filters apply to track-level discovery views such as the library snapshot and repeated/underrated tracks. The Actions tab turns the marts into next-step queues: real-account/data-quality actions, rediscovery tracks, playlist cleanup candidates, standout playlists, and download buttons for the markdown summary, JSON snapshot and recommendations CSV files.
+The dashboard includes sidebar focus controls for genre, liked state, text search, release years, repeat signal and playlist coverage. These filters apply to track-level discovery views such as repeated/underrated tracks and the visual Explorer. The Atlas tab adds chart-first views for genre shape, monthly rhythm, release-year time travel, playlist subway overlap and playlist DNA. The Actions tab turns the marts into next-step queues: real-account/data-quality actions, rediscovery tracks, playlist cleanup candidates, standout playlists, and download buttons for the markdown summary, JSON snapshot and recommendations CSV files.
+
+Location-aware analytics are intentionally out of scope for the current Yandex Music metadata adapter. Yandex Music library metadata does not provide a stable listening location, and account region, playlist language, genre or artist origin must not be treated as user location. The dashboard can show Geo Atlas readiness and optional map previews when user-supplied CSV enrichment exists under `STREAMIFY_ENRICHMENT_DIR`, but those maps must be labeled as artist-associated geography or user-provided location timeline data. A future opt-in contract for user-supplied location timelines and artist-associated places is documented in [Future Location Enrichment Contract](location_enrichment.md).
 
 `make report` exports the same marts into two portable artifacts:
 
@@ -172,6 +180,8 @@ The legacy BigQuery/Airflow quality contract remains intact and is still checked
 Yandex Music does not provide a stable public API for every analytics use case. This project isolates integration behind `yamusic_ingest/yandex_client.py` and uses the unofficial `yandex-music` Python package. Available fields can differ by account, region, subscription state, and library visibility.
 
 If the real integration returns less data than expected, use `make ingest-sample` to verify the local pipeline and dashboard independently from account access.
+
+The local product does not infer where listening happened. Future location enrichment must come from explicit user-provided sources, such as Google Takeout Location History when available, selected photo EXIF, calendar/travel exports, a manual city timeline, or network/IP logs only when the user deliberately supplies them. iOS Significant Locations may exist on-device but are not practically exportable for this product. See [Future Location Enrichment Contract](location_enrichment.md) for schema ideas, privacy constraints and timestamp-join caveats.
 
 ## Reset
 
