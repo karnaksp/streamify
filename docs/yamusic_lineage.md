@@ -1,10 +1,10 @@
-# Yandex Music Local Lineage
+# Lineage локальной Яндекс Музыки
 
-This catalog documents the local metadata-only data path. Streamify does not download, store, transform, or play audio.
+Этот каталог описывает локальный путь данных только по метаданным. Streamify не скачивает, не хранит, не преобразует и не воспроизводит аудио.
 
-## Layer Map
+## Карта слоев
 
-| Layer | Artifact | Purpose |
+| Слой | Артефакт | Назначение |
 | --- | --- | --- |
 | Raw/Bronze | `data/raw/yamusic/tracks.jsonl` | Track metadata, album fields, artist arrays, liked flag, source and ingestion timestamp. |
 | Raw/Bronze | `data/raw/yamusic/artists.jsonl` | Artist metadata discovered from tracks and account-visible liked artists. |
@@ -102,9 +102,9 @@ flowchart LR
   track_signals --> recommendations
 ```
 
-## Product Questions
+## Продуктовые вопросы
 
-| Product question | Primary model | Supporting models |
+| Продуктовый вопрос | Основная модель | Вспомогательные модели |
 | --- | --- | --- |
 | Favorite artists | `yamusic_artist_affinity` | `yamusic_dim_tracks`, `yamusic_fact_playlist_tracks` |
 | Favorite tracks | `yamusic_dim_tracks` | `yamusic_track_signals` |
@@ -116,7 +116,7 @@ flowchart LR
 | Underrated playlists | `yamusic_playlist_signals.underrated_playlist_flag` | `yamusic_playlist_overlap`, `yamusic_dim_playlists` |
 | Data freshness | `yamusic_library_profile.stale_ingestion_flag` | `yamusic_fact_library_events` |
 
-## Quality Gates
+## Quality gates
 
 | Gate | Command | What it proves |
 | --- | --- | --- |

@@ -1,8 +1,8 @@
-# Release Process
+# Процесс релиза
 
-Streamify releases are source-first and privacy-safe. Public artifacts must never include `.env`, real raw Yandex Music exports, DuckDB files, account snapshots, recommendation CSVs from a real account, or audio.
+Релизы Streamify публикуют исходный код и sample-артефакты, но не приватные данные. В публичные артефакты не должны попадать `.env`, real raw exports Яндекс Музыки, DuckDB-файлы, snapshots аккаунта, CSV-рекомендации реального аккаунта или audio.
 
-## Release Checklist
+## Чеклист релиза
 
 1. Open or update GitHub issues for the agent lanes included in the release.
 2. Run `make test` locally.
@@ -16,8 +16,8 @@ git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-The `Release` workflow runs sample-data validation, builds public docs, packages tracked source via `git archive`, and creates a GitHub release from the tag notes.
+Workflow `Release` прогоняет проверку на sample-данных, собирает публичную документацию, упаковывает tracked source через `git archive` и создает GitHub release из release notes.
 
 ## GitHub Pages
 
-The `GitHub Pages` workflow builds a static product site from README/docs plus sample metadata report artifacts. It intentionally clears `YANDEX_MUSIC_TOKEN` so public pages are reproducible and do not depend on a private account.
+Workflow `GitHub Pages` собирает статический продуктовый сайт из README/docs и sample-отчета. Он намеренно очищает `YANDEX_MUSIC_TOKEN`, чтобы публичные страницы были воспроизводимыми и не зависели от приватного аккаунта.

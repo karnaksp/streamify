@@ -130,22 +130,22 @@ def main() -> int:
 
     require_markers(
         "README.md",
-        ["Яндекс Музыки", "DuckDB", "make help", "make status", "make ingest-sample", "make acceptance-real", "make dashboard", "как меняется вкус", "`local`", "DBT_THREADS=1", "scripts/run_with_dotenv.py", "make clean-local", "dbt `target`/`logs`/`dbt_packages`", "make readiness-real", "make up-local", "make compose-smoke-real", "make snapshot", "make recommendations", "make pages-site", "GitHub Pages", "streamify_snapshot.json", "data/recommendations", "География И Карты", "Atlas", "docs/assets/dashboard-story.png", "docs/assets/dashboard-atlas.png", "docs/assets/dashboard-actions.png"],
+        ["Яндекс Музыки", "DuckDB", "make help", "make status", "make ingest-sample", "make acceptance-real", "make dashboard", "как меняется вкус", "`local`", "DBT_THREADS=1", "scripts/run_with_dotenv.py", "make clean-local", "dbt `target`/`logs`/`dbt_packages`", "make readiness-real", "make up-local", "make compose-smoke-real", "make snapshot", "make recommendations", "make pages-site", "GitHub Pages", "streamify_snapshot.json", "data/recommendations", "География и карты", "Atlas", "docs/assets/dashboard-story.png", "docs/assets/dashboard-atlas.png", "docs/assets/dashboard-actions.png"],
     )
     require_markers(
         "docs/yandex_music_local.md",
-        ["YANDEX_MUSIC_TOKEN", "make acceptance-real", "make status", "make token-help", "make compose-smoke-real", "built-in device auth", "bounded retries", "dbt build --profiles-dir . --target local", "No audio", "underrated tracks", "Real Account Acceptance Check", "Empty/private accounts", "scripts/run_with_dotenv.py", "make dbt-build", "make up-local", "streamify_empty_smoke", "--require-real", "stale Parquet cleanup", "JSONL sha256 checksums", "ingestion diagnostics", "ingestion diagnostics consistency", "STREAMIFY_SNAPSHOT_PATH", "STREAMIFY_RECOMMENDATIONS_DIR", "streamify_snapshot.json", "data/recommendations", "latest manifest source", "Actions tab"],
+        ["YANDEX_MUSIC_TOKEN", "make acceptance-real", "make status", "make token-help", "make compose-smoke-real", "built-in device auth", "bounded retries", "dbt build --profiles-dir . --target local", "не скачивает", "underrated tracks", "Проверка реального аккаунта", "Empty/private accounts", "scripts/run_with_dotenv.py", "make dbt-build", "make up-local", "streamify_empty_smoke", "--require-real", "stale Parquet cleanup", "JSONL sha256 checksums", "ingestion diagnostics", "ingestion diagnostics consistency", "STREAMIFY_SNAPSHOT_PATH", "STREAMIFY_RECOMMENDATIONS_DIR", "streamify_snapshot.json", "data/recommendations", "latest manifest source", "Actions tab"],
     )
     require_markers(
         "docs/yamusic_lineage.md",
-        ["Raw/Bronze", "Silver", "Gold", "liked albums", "liked artists", "liked playlists", "stg_yamusic_manifest", "adapter/client metadata", "diagnostics counters", "JSONL sha256 checksums", "ingestion diagnostics consistency", "yamusic_genre_periods", "Product Questions", "Quality Gates", "make acceptance-real", "referential integrity", "Snapshot export", "JSON snapshot", "Recommendations export"],
+        ["Raw/Bronze", "Silver", "Gold", "liked albums", "liked artists", "liked playlists", "stg_yamusic_manifest", "adapter/client metadata", "diagnostics counters", "JSONL sha256 checksums", "ingestion diagnostics consistency", "yamusic_genre_periods", "Продуктовые вопросы", "Quality gates", "make acceptance-real", "referential integrity", "Snapshot export", "JSON snapshot", "Recommendations export"],
     )
     require_markers(
         "docs/product_acceptance.md",
-        ["Requirement Matrix", "make acceptance-local", "make test", "make acceptance-real", "real_account_verified", "No audio", "Yandex Music metadata ingestion", "make readiness-real", "make compose-smoke-real", "make product-answers-smoke", "stale Parquet cleanup", "Source provenance", "data/streamify_snapshot.json", "make snapshot", "data/recommendations/*.csv", "make recommendations", "dashboard Actions tab"],
+        ["Матрица требований", "make acceptance-local", "make test", "make acceptance-real", "real_account_verified", "No audio", "Yandex Music metadata ingestion", "make readiness-real", "make compose-smoke-real", "make product-answers-smoke", "stale Parquet cleanup", "Source provenance", "data/streamify_snapshot.json", "make snapshot", "data/recommendations/*.csv", "make recommendations", "dashboard Actions tab"],
     )
     require_markers("dbt/profiles.yml", ["type: duckdb", "target: local", "DBT_THREADS"])
-    require_markers("dbt/README.md", ["Streamify dbt Models", "Yandex Music self-analytics", "staging/stg_yamusic_*", "marts/yamusic_dim_*", "data/streamify.duckdb"])
+    require_markers("dbt/README.md", ["dbt-модели Streamify", "self-analytics Яндекс Музыки", "staging/stg_yamusic_*", "marts/yamusic_dim_*", "data/streamify.duckdb"])
     require_markers(".env.example", ["YANDEX_MUSIC_TOKEN=", "STREAMIFY_REPORT_PATH", "STREAMIFY_SNAPSHOT_PATH", "STREAMIFY_RECOMMENDATIONS_DIR", "STREAMIFY_ENRICHMENT_DIR", "DBT_THREADS=1"])
     require_markers(
         "dbt/models/yamusic/schema.yml",
@@ -160,10 +160,10 @@ def main() -> int:
     require_markers(".github/workflows/data-quality.yml", ["make test", "YANDEX_MUSIC_TOKEN", "DBT_THREADS"])
     require_markers(".github/workflows/pages.yml", ["GitHub Pages", "make acceptance-local", "build_pages_site.py", "YANDEX_MUSIC_TOKEN: \"\"", "actions/deploy-pages"])
     require_markers(".github/workflows/release.yml", ["Release", "tags:", "make test", "git archive", "gh release create"])
-    require_markers(".github/ISSUE_TEMPLATE/agent_task.yml", ["Agent lane", "Repo/Build", "Yandex Ingestion", "Analytics/dbt", "Product/Dashboard", "QA/Integration"])
-    require_markers(".github/PULL_REQUEST_TEMPLATE.md", ["Product Value", "Data Engineering Impact", "make test", "make acceptance-real"])
-    require_markers("docs/project_management.md", ["Agent Lanes", "Repo/Build", "Yandex Ingestion", "QA/Integration", "v0.1.0-local-mvp"])
-    require_markers("docs/release_process.md", ["Release Checklist", "GitHub Pages", "sample metadata", "git tag vX.Y.Z"])
+    require_markers(".github/ISSUE_TEMPLATE/agent_task.yml", ["Направление", "Repo/Build", "Yandex Ingestion", "Analytics/dbt", "Product/Dashboard", "QA/Integration"])
+    require_markers(".github/PULL_REQUEST_TEMPLATE.md", ["Продуктовая ценность", "Влияние на данные", "make test", "make acceptance-real"])
+    require_markers("docs/project_management.md", ["Направления агентов", "Repo/Build", "Yandex Ingestion", "QA/Integration", "v0.1.0-local-mvp"])
+    require_markers("docs/release_process.md", ["Чеклист релиза", "GitHub Pages", "sample-данных", "git tag vX.Y.Z"])
     require_markers("scripts/build_pages_site.py", ["PUBLIC_DIR", "Главная", "Дашборд", "Atlas + Гео", "streamify_summary.md", "dashboard.html", "location.html", "hero-visual", "side-link", "media-frame", "inline_markdown", "docs/assets/", "assets/", "index.html"])
     require_markers("scripts/yamusic_token_help.py", ["TOKEN_HELPER_URL", "supports_device_auth", "token_configured", "make preflight", "make acceptance-real"])
     require_markers("scripts/check_no_local_sensitive_artifacts.py", ["FORBIDDEN_TRACKED_PATHS", "data/raw/yamusic", "DuckDB files", "audio artifacts are tracked"])

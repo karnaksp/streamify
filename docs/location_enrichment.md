@@ -1,37 +1,37 @@
-# Future Location Enrichment Contract
+# Контракт гео-обогащения
 
-This document sketches a future, optional geo/location data contract for Streamify. It is not part of the current Yandex Music local ingestion path and should not be treated as an implemented feature.
+Этот документ описывает будущий опциональный слой геоданных для Streamify. Он не входит в текущий ingestion Яндекс Музыки и не должен восприниматься как уже реализованная функция.
 
-## Why Yandex Music Metadata Is Not Enough
+## Почему метаданных Яндекс Музыки недостаточно
 
-The current Yandex Music adapter reads account-visible metadata through the `yandex-music` Python client: tracks, artists, albums, playlists, playlist membership, liked markers and derived library events. That metadata does not include a stable listening location field.
+Текущий адаптер Яндекс Музыки читает доступные аккаунту метаданные через Python-клиент `yandex-music`: треки, артистов, альбомы, плейлисты, состав плейлистов, лайки и производные события библиотеки. В этих данных нет надежного поля с местом прослушивания.
 
-Even when timestamps are present, they describe a music library action such as a like, playlist membership or account-visible history item. They do not prove where the user was when listening. Region, catalog availability, account locale, artist country or playlist language are not user location signals.
+Даже если timestamp присутствует, он описывает действие в библиотеке: лайк, добавление в плейлист или доступный аккаунту элемент истории. Он не доказывает, где пользователь находился во время прослушивания. Регион аккаунта, доступность каталога, язык плейлиста, страна артиста или жанр не являются сигналами местоположения пользователя.
 
-## Safe User Location Sources
+## Безопасные источники местоположения
 
-Location enrichment must be user-supplied, optional and separable from music ingestion. Possible sources over time:
+Гео-обогащение должно быть явным, опциональным и отделенным от музыкального ingestion. Возможные источники:
 
-- Google Timeline / Google Takeout Location History, if the user has it enabled and explicitly exports it.
-- iOS Significant Locations, noted as a possible on-device source but not practically exportable for reliable Streamify ingestion.
-- Photo EXIF GPS coordinates, only from user-selected photos and only with explicit consent.
-- Calendar or travel exports, such as flight, hotel, event or trip records that the user explicitly provides.
-- A manual city timeline maintained by the user, for example date ranges such as `2025-06-01` to `2025-06-14` in `Tbilisi, Georgia`.
-- Network or IP logs only if the user explicitly provides them and understands their limits. Streamify should not collect IP logs implicitly.
+- Google Timeline / Google Takeout Location History, если хронология включена и пользователь явно экспортирует данные.
+- GPS в EXIF фотографий, только из выбранных пользователем фото и только с явным согласием.
+- Экспорты календаря и поездок: перелеты, отели, мероприятия, билеты.
+- Ручная city timeline, например интервалы `2025-06-01` - `2025-06-14` в `Tbilisi, Georgia`.
+- Сетевые или IP-логи только если пользователь сам их предоставляет и понимает ограничения точности.
+- iOS Significant Locations можно считать потенциальным on-device источником, но он плохо подходит для надежного экспорта в Streamify.
 
-Sources that are not safe defaults:
+Что нельзя считать безопасным источником по умолчанию:
 
-- Inferring user location from artist origin, track language, genre, playlist name or Yandex account region.
-- Scraping device, browser or network location without a deliberate user import step.
-- Treating coarse country or IP geolocation as precise movement history.
+- выводить местоположение пользователя из страны артиста, языка трека, жанра, названия плейлиста или региона аккаунта;
+- собирать location из устройства, браузера или сети без отдельного шага импорта;
+- считать грубую IP-геолокацию точной историей перемещений.
 
 ## `user_location_events`
 
 `user_location_events` should represent where the user may have been during a time interval, with confidence and provenance.
 
-Suggested fields:
+Рекомендуемые поля:
 
-| Field | Type | Notes |
+| Поле | Тип | Примечания |
 | --- | --- | --- |
 | `location_event_id` | string | Stable hash of source, source row id and normalized time interval. |
 | `source` | string | `google_takeout`, `photo_exif`, `calendar_travel`, `manual_city_timeline`, `network_ip_log`, or another explicit import source. |
@@ -54,11 +54,11 @@ The table should allow overlapping rows because real-world sources conflict. Dow
 
 ## `artist_locations`
 
-`artist_locations` should describe artist-associated places, not user listening places. It can support questions such as geographic diversity of artists, but it must never be used as evidence of where the user listened.
+`artist_locations` описывает места, связанные с артистами, а не места прослушивания пользователя. Таблица может отвечать на вопросы о географическом разнообразии артистов, но не должна использоваться как доказательство того, где пользователь слушал музыку.
 
-Suggested fields:
+Рекомендуемые поля:
 
-| Field | Type | Notes |
+| Поле | Тип | Примечания |
 | --- | --- | --- |
 | `artist_location_id` | string | Stable hash of artist id, source and normalized location. |
 | `artist_id` | string | Streamify/Yandex artist identifier when available. |
@@ -76,7 +76,7 @@ Suggested fields:
 | `confidence` | double | `0.0` to `1.0`; biographies and crowd-sourced sources require care. |
 | `notes` | string | Optional caveat for ambiguous or multi-location artists. |
 
-## Joining Location To Library Events
+## Join геоданных с музыкальными событиями
 
 The future join should be timestamp-based and explicit about uncertainty:
 

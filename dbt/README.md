@@ -1,25 +1,25 @@
-# Streamify dbt Models
+# dbt-модели Streamify
 
-This dbt project builds local DuckDB marts for Yandex Music self-analytics.
+Этот dbt-проект собирает локальные DuckDB-марты для self-analytics Яндекс Музыки.
 
-## Run
+## Запуск
 
 ```bash
 dbt deps
 dbt build --profiles-dir . --target local --select yamusic
 ```
 
-For normal local work, run from the repository root:
+Для обычной локальной работы запускайте из корня репозитория:
 
 ```bash
 make dbt-build
 ```
 
-## Model Shape
+## Состав моделей
 
 - `staging/stg_yamusic_*`: typed views over raw JSONL metadata and the ingestion manifest.
 - `marts/yamusic_dim_*`: track, artist, album and playlist dimensions.
 - `marts/yamusic_fact_*`: library events and playlist-track membership.
 - `marts/yamusic_*_signals`: practical self-analytics for affinity, repeats, genres, periods, playlists and library health.
 
-The local profile writes to `data/streamify.duckdb` by default and reads raw metadata from `data/raw/yamusic`.
+Локальный профиль по умолчанию пишет в `data/streamify.duckdb` и читает raw metadata из `data/raw/yamusic`.
