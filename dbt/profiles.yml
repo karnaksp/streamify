@@ -22,4 +22,8 @@ streamify:
       threads: 4
       timeout_seconds: 300
       type: bigquery
+    local:
+      type: duckdb
+      path: "../{{ env_var('STREAMIFY_DUCKDB_PATH', 'data/streamify.duckdb') }}"
+      threads: "{{ env_var('DBT_THREADS', 1) | int }}"
   target: dev

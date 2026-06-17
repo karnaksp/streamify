@@ -1,0 +1,41 @@
+name: Agent task
+description: Track a multi-agent implementation task for Streamify.
+title: "[Agent] "
+labels: ["agent-task", "triage"]
+body:
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent lane
+      options:
+        - Repo/Build
+        - Yandex Ingestion
+        - Analytics/dbt
+        - Product/Dashboard
+        - QA/Integration
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: State the product or engineering outcome, not only the code change.
+      placeholder: "Example: Make real-account ingestion observable and idempotent for playlist metadata."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance checks
+      description: Commands, artifacts, or runtime behavior that prove completion.
+      placeholder: |
+        - make raw-contract
+        - make dbt-build
+        - make dashboard-smoke
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes and risks
+      description: API risk, privacy constraints, data quality assumptions, or dependencies.

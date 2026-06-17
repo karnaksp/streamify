@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  validate-dbt-quality-contract:
+  validate-local-product-contract:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -18,14 +18,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate dbt quality contract
-        run: python3 scripts/validate_dbt_quality.py
+      - name: Install local dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements.txt
 
-      - name: Compile Python files
-        run: python3 -m compileall -q airflow/dags spark_streaming scripts
-
-      - name: Validate Airflow Compose config
-        run: cd airflow && GCP_PROJECT_ID=dummy GCP_GCS_BUCKET=dummy docker compose config --quiet
-
-      - name: Validate Kafka Compose config
-        run: cd kafka && docker compose config --quiet
+      - name: Run local product acceptance checks
+        env:
+          YANDEX_MUSIC_TOKEN: ""
+          DBT_THREADS: "1"
+        run: make test

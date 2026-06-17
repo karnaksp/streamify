@@ -1,6 +1,77 @@
 # Streamify
 
-A data pipeline with Kafka, Spark Streaming, dbt, Docker, Airflow, Terraform, GCP and much more!
+Local-first music self-analytics for Yandex Music metadata, plus the original Kafka/Spark/Airflow/GCP streaming pipeline.
+
+Streamify now has two compatible tracks:
+
+- **Local product track**: ingest your Yandex Music metadata, build DuckDB/dbt marts, and open a Streamlit dashboard without cloud cost.
+- **Legacy cloud engineering track**: keep the original Eventsim, Kafka, Spark Streaming, Airflow, dbt BigQuery and GCP architecture for portfolio-grade data engineering.
+
+The local product track stores metadata and derived analytics only. It does not download or store audio.
+
+## Local Yandex Music Self-Analytics
+
+Product value: turn your own Yandex Music library into a reproducible local lakehouse that answers practical questions about your listening taste and library shape: favorite artists and tracks, genre shifts, playlist overlap, repeated patterns, diversity, active periods, underrated tracks and playlists, local data quality, and what data is missing.
+
+First run without credentials:
+
+```bash
+cp .env.example .env
+make setup
+make help
+make status
+make ingest-sample
+make raw-contract
+make dbt-build
+make doctor
+make report
+make readiness
+make dashboard-smoke
+make dashboard
+```
+
+Then open the Streamlit URL printed by `make dashboard`.
+
+Run with your account metadata:
+
+```bash
+cp .env.example .env
+make token-help
+# Get a Yandex Music OAuth token with an external helper, then set YANDEX_MUSIC_TOKEN in .env.
+make acceptance-real
+make dashboard
+```
+
+Local defaults:
+
+- command guide: `make help`
+- token guide: `make token-help`
+- raw metadata: `data/raw/yamusic/*.jsonl`
+- local warehouse: `data/streamify.duckdb`
+- local configuration: `.env` is loaded by the Python CLI/scripts and by `scripts/run_with_dotenv.py` for Makefile commands, so token and path overrides work without Make parsing token values.
+- dbt target: `dbt build --profiles-dir . --target local --select yamusic`
+- dbt packages: `make setup` and `make dbt-build` both run `dbt deps`, so a fresh checkout does not rely on ignored local `dbt/dbt_packages`.
+- dbt local threads: `DBT_THREADS=1` by default for stable laptop/container runs; raise it explicitly if your environment is stable.
+- local status: `make status` prints safe configuration/readiness hints without calling Yandex Music or printing token values.
+- token preflight: `make preflight` checks real Yandex Music API access without writing raw data or printing the token.
+- dashboard: `streamlit run dashboard/app.py`
+- dashboard smoke: `make dashboard-smoke`
+- static self-analytics report: `make report`, written to `data/streamify_summary.md`
+- structured self-analytics snapshot: `make snapshot`, written to `data/streamify_snapshot.json` for automation and downstream agent workflows.
+- spreadsheet action queues: `make recommendations`, written to `data/recommendations/*.csv` for rediscovery, playlist cleanup, standout playlists, top artists and genre shifts.
+- static GitHub Pages site: `make pages-site`, generated into ignored `public/` from docs and safe sample/report artifacts.
+- readiness audit: `make readiness`, which verifies raw counts, DuckDB marts, report, no audio artifacts and whether the latest run is sample or real Yandex Music metadata.
+- local acceptance check: `make doctor`
+- real-account acceptance: `make acceptance-real`, which also runs `make readiness-real` and fails unless the latest manifest source is `yandex_music`.
+- safety guard: `scripts/check_no_local_sensitive_artifacts.py` keeps root `.env`, Yandex raw data, DuckDB files and local audio out of git.
+- raw schema contract: `make raw-contract`
+- Docker Compose smoke: `make compose-smoke-local`
+- one-command container path: `make up-local`, which loads `.env` through `scripts/run_with_dotenv.py` and runs Docker Compose with the `local` profile. It uses real Yandex Music metadata when `YANDEX_MUSIC_TOKEN` is present in `.env`, otherwise it writes deterministic sample metadata.
+- local reset: `make clean-local` removes generated raw metadata, DuckDB databases, summary/snapshot/recommendations reports, dbt target/logs/packages, and smoke-test artifacts while preserving `.env` and source files.
+
+See [docs/yandex_music_local.md](docs/yandex_music_local.md) for the local architecture, token handling, and limitations. See [docs/yamusic_lineage.md](docs/yamusic_lineage.md) for raw-to-dashboard lineage and model ownership. See [docs/product_acceptance.md](docs/product_acceptance.md) for the requirement-to-command acceptance matrix.
+
+GitHub delivery is managed through issue templates, a PR checklist, sample-data CI, GitHub Pages, and tag-based releases. See [docs/project_management.md](docs/project_management.md) and [docs/release_process.md](docs/release_process.md).
 
 ## Слой Качества Данных
 

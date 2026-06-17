@@ -1,0 +1,28 @@
+name: Product request
+description: Propose a user-facing analytics or workflow improvement.
+title: "[Product] "
+labels: ["product", "triage"]
+body:
+  - type: textarea
+    id: user_value
+    attributes:
+      label: Product value
+      description: What decision or action should this help a listener take?
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Data needed
+      description: Which Yandex Music metadata, marts, or dashboard views are involved?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance checks
+      placeholder: |
+        - make product-answers-smoke
+        - make dashboard-smoke
+    validations:
+      required: true

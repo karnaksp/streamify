@@ -20,36 +20,41 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('dim_users')
-              field: userKey
+              arguments:
+                to: ref('dim_users')
+                field: userKey
       - name: artistKey
         description: Surrogate key for the listened artist.
         tests:
           - not_null
           - relationships:
-              to: ref('dim_artists')
-              field: artistKey
+              arguments:
+                to: ref('dim_artists')
+                field: artistKey
       - name: songKey
         description: Surrogate key for the listened song.
         tests:
           - not_null
           - relationships:
-              to: ref('dim_songs')
-              field: songKey
+              arguments:
+                to: ref('dim_songs')
+                field: songKey
       - name: dateKey
         description: Hour-level datetime key.
         tests:
           - not_null
           - relationships:
-              to: ref('dim_datetime')
-              field: dateKey
+              arguments:
+                to: ref('dim_datetime')
+                field: dateKey
       - name: locationKey
         description: Surrogate key for event location.
         tests:
           - not_null
           - relationships:
-              to: ref('dim_location')
-              field: locationKey
+              arguments:
+                to: ref('dim_location')
+                field: locationKey
       - name: ts
         description: Original listening event timestamp.
         tests:
@@ -71,13 +76,15 @@ models:
         description: User gender as produced by Eventsim.
         tests:
           - accepted_values:
-              values: ['M', 'F']
+              arguments:
+                values: ['M', 'F']
       - name: level
         description: Subscription level tracked as SCD2 attribute.
         tests:
           - not_null
           - accepted_values:
-              values: ['free', 'paid']
+              arguments:
+                values: ['free', 'paid']
       - name: rowActivationDate
         description: First date when this SCD2 row is active.
         tests:
@@ -91,7 +98,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [0, 1]
+              arguments:
+                values: [0, 1]
 
   - name: dim_songs
     description: Song dimension from Million Song Dataset seed/source data.
@@ -166,7 +174,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [true, false]
+              arguments:
+                values: [true, false]
 
   - name: wide_streams
     description: Dashboard-friendly denormalized view over fact_streams and core dimensions.
