@@ -61,7 +61,7 @@ dbt-deps:
 	$(ENV_RUN) --cwd dbt -- $(abspath $(VENV_DBT)) deps
 
 dbt-build: dbt-deps
-	GCP_PROJECT_ID=dummy $(ENV_RUN) --cwd dbt -- $(abspath $(VENV_DBT)) build --profiles-dir . --target local --select yamusic
+	$(ENV_RUN) --cwd dbt -- $(abspath $(VENV_DBT)) build --profiles-dir . --target local --select yamusic
 
 dashboard:
 	$(ENV_RUN) -- $(VENV_STREAMLIT) run dashboard/app.py
@@ -113,7 +113,6 @@ compose-smoke-real:
 	$(ENV_RUN) -- $(VENV_PYTHON) scripts/smoke_compose_local.py --use-env-token
 
 test:
-	$(VENV_PYTHON) scripts/validate_dbt_quality.py
 	$(VENV_PYTHON) scripts/validate_yamusic_local.py
 	$(VENV_PYTHON) scripts/check_no_local_sensitive_artifacts.py
 	$(VENV_PYTHON) scripts/check_no_audio_artifacts.py
@@ -122,10 +121,8 @@ test:
 	$(MAKE) product-answers-smoke
 	$(MAKE) real-gate-smoke
 	$(MAKE) pages-site
-	$(VENV_PYTHON) -m compileall -q airflow/dags spark_streaming scripts yamusic_ingest dashboard tests
+	$(VENV_PYTHON) -m compileall -q scripts yamusic_ingest dashboard tests
 	$(VENV_PYTHON) -m pytest -q
-	cd airflow && GCP_PROJECT_ID=dummy GCP_GCS_BUCKET=dummy docker compose config --quiet
-	cd kafka && docker compose config --quiet
 	$(ENV_RUN) -- docker compose -f docker-compose.local.yml config --quiet
 	$(ENV_RUN) -- docker compose -f docker-compose.local.yml --profile local config --quiet
 	$(MAKE) compose-smoke-local
@@ -134,8 +131,6 @@ up-local:
 	$(ENV_RUN) -- docker compose -f docker-compose.local.yml --profile local up --build
 
 compose-check:
-	cd airflow && GCP_PROJECT_ID=dummy GCP_GCS_BUCKET=dummy docker compose config --quiet
-	cd kafka && docker compose config --quiet
 	$(ENV_RUN) -- docker compose -f docker-compose.local.yml config --quiet
 	$(ENV_RUN) -- docker compose -f docker-compose.local.yml --profile local config --quiet
 

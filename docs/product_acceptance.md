@@ -6,7 +6,7 @@ This document maps the MVP requirements to concrete repository artifacts and ver
 
 | Requirement | Implementation Evidence | Verification |
 | --- | --- | --- |
-| Fully local run without GCP | `Makefile`, `docker-compose.local.yml`, `dbt/profiles.yml` local DuckDB target | `make acceptance-local`, `make compose-smoke-local` |
+| Fully local run without cloud services | `Makefile`, `docker-compose.local.yml`, `dbt/profiles.yml` local DuckDB target | `make acceptance-local`, `make compose-smoke-local` |
 | Local operator entrypoint | `make help` lists sample, real-account, Docker, export, readiness and cleanup commands | `make help` |
 | Docker Compose local product path | `docker-compose.local.yml` `local` profile with one-shot build, dashboard services, `set -euo pipefail`, real-source readiness enforcement when a token is configured, and compose smoke validation of raw/product/dashboard artifacts | `make up-local`, `make compose-smoke-local`, `make compose-smoke-real` |
 | Yandex Music metadata ingestion | `yamusic_ingest/__main__.py`, `yamusic_ingest/yandex_client.py`; liked tracks, owned playlists, liked playlists, liked albums and liked artists where exposed by the API | `make preflight`, `make ingest`, `make acceptance-real` |

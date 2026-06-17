@@ -1,29 +1,7 @@
 streamify:
   outputs:
-    dev:
-      dataset: streamify_stg
-      fixed_retries: 1
-      keyfile: /.google/credentials/google_credentials.json
-      location: us-central1
-      method: service-account
-      priority: interactive
-      project: "{{ env_var('GCP_PROJECT_ID') }}"
-      threads: 4
-      timeout_seconds: 300
-      type: bigquery
-    prod:
-      dataset: streamify_prod
-      fixed_retries: 1
-      keyfile: /.google/credentials/google_credentials.json
-      location: us-central1
-      method: service-account
-      priority: interactive
-      project: "{{ env_var('GCP_PROJECT_ID') }}"
-      threads: 4
-      timeout_seconds: 300
-      type: bigquery
     local:
       type: duckdb
       path: "../{{ env_var('STREAMIFY_DUCKDB_PATH', 'data/streamify.duckdb') }}"
       threads: "{{ env_var('DBT_THREADS', 1) | int }}"
-  target: dev
+  target: local

@@ -30,8 +30,8 @@ services:
         fi
         python scripts/validate_yamusic_raw_contract.py
         cd dbt
-        GCP_PROJECT_ID=dummy dbt deps
-        GCP_PROJECT_ID=dummy dbt build --profiles-dir . --target local --select yamusic
+        dbt deps
+        dbt build --profiles-dir . --target local --select yamusic
         cd ..
         python scripts/doctor_yamusic_local.py
         python scripts/export_yamusic_summary.py
@@ -55,23 +55,3 @@ services:
     ports:
       - "${STREAMIFY_DASHBOARD_PORT:-8501}:8501"
     command: ["streamlit", "run", "dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
-
-  kafka:
-    image: confluentinc/cp-kafka:7.7.1
-    profiles: ["kafka"]
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
