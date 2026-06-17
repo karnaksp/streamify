@@ -17,6 +17,7 @@ This document maps the MVP requirements to concrete repository artifacts and ver
 | Idempotent local ingestion | overwrite-per-run raw writer, stale Parquet cleanup, and `_manifest.json` row counts | repeated `make ingest-sample`, `make raw-contract` |
 | Data quality checks | dbt schema tests, raw contract, doctor, safety checks, empty-account smoke | `make test` |
 | Practical self-analytics answers | `yamusic_artist_affinity`, `yamusic_genre_periods`, `yamusic_track_signals`, `yamusic_playlist_signals`, `yamusic_library_profile`, dashboard genre/liked/search filters, dashboard Actions/Data Quality tabs, dashboard content smoke, `data/streamify_summary.md`, `data/streamify_snapshot.json`, `data/recommendations/*.csv` | `make product-answers-smoke`, `make dashboard-smoke`, `make report`, `make snapshot`, `make recommendations`, `make dashboard` |
+| Future location enrichment is documented but not implemented | `docs/location_enrichment.md`; current Yandex Music metadata has no listening-location field, and any future joins require explicit user-provided location timelines plus confidence/provenance labels | Documentation review only |
 | Empty/private account handling | typed empty raw files and empty dbt smoke | `scripts/smoke_empty_yamusic_dbt.py`, `make test` |
 | Token safety | `.env.example`, `.gitignore`, no token in manifest/report/status, preflight without raw writes | `make status`, `make preflight`, `scripts/check_no_local_sensitive_artifacts.py` |
 
@@ -53,9 +54,11 @@ The readiness audit must report `"real_account_verified": true` before the real-
 | Can I open action queues in a spreadsheet? | `data/recommendations/*.csv`, `make recommendations` |
 | Can I reuse the answers outside the dashboard? | `data/streamify_snapshot.json`, `make snapshot` |
 | Is my local data trustworthy? | dashboard Data Quality tab, JSON snapshot quality block, `make doctor`, `make readiness` |
+| Can Streamify analyze music by where I was? | Future-only contract in `docs/location_enrichment.md`; not part of current acceptance |
 
 ## Known Product Limits
 
 - Yandex Music availability depends on the unofficial `yandex-music` package and account-visible metadata.
 - Listening timestamps/history are used only when exposed by the account/API response; otherwise the product falls back to liked-track and playlist-membership events.
+- Listening location is not present in current Yandex Music metadata. Future geo enrichment must be opt-in, source-labeled and joined to library events by timestamp with caveats around confidence and inference.
 - The dashboard and report are analytics over metadata and derived events, not audio playback or audio feature extraction.

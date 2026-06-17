@@ -63,12 +63,14 @@ def main() -> int:
             "Tracks in focus",
             "Liked in focus",
             "Zero-playlist",
+            "Artist location rows",
+            "User location rows",
         ],
         "metrics",
     )
     require_contains(
         labels(app.tabs),
-        ["Story", "Taste Map", "Mix Shift", "Rediscovery", "Playlists", "Explorer", "Actions", "Data Quality"],
+        ["Story", "Taste Map", "Atlas", "Mix Shift", "Rediscovery", "Playlists", "Explorer", "Actions", "Data Quality"],
         "tabs",
     )
     require_contains(
@@ -79,10 +81,17 @@ def main() -> int:
             "Genre fingerprint",
             "Artist gravity",
             "Genre diversity",
+            "Genre Atlas",
+            "Monthly Rhythm",
+            "Music Time Travel",
+            "Playlist Subway",
+            "Playlist DNA",
+            "Geo Atlas readiness",
             "Genre heatmap",
             "Release-era mix",
             "Focus genre mix",
             "Rediscovery queue",
+            "Rediscovery quadrants",
             "Repeat signals",
             "Playlist health",
             "Playlist overlap",
@@ -93,7 +102,7 @@ def main() -> int:
         ],
         "sections",
     )
-    if len(app.dataframe) < 6:
+    if len(app.dataframe) < 8:
         fail(f"dashboard should keep audit dataframes available in expanders, found {len(app.dataframe)}")
     if not app.json:
         fail("dashboard Data Quality tab should expose a JSON quality block")

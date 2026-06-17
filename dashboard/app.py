@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import math
 import os
 import sys
 from pathlib import Path
@@ -23,6 +24,7 @@ DB_PATH = Path(os.getenv("STREAMIFY_DUCKDB_PATH", "data/streamify.duckdb"))
 REPORT_PATH = Path(os.getenv("STREAMIFY_REPORT_PATH", "data/streamify_summary.md"))
 SNAPSHOT_PATH = Path(os.getenv("STREAMIFY_SNAPSHOT_PATH", "data/streamify_snapshot.json"))
 RECOMMENDATIONS_DIR = Path(os.getenv("STREAMIFY_RECOMMENDATIONS_DIR", "data/recommendations"))
+ENRICHMENT_DIR = Path(os.getenv("STREAMIFY_ENRICHMENT_DIR", "data/enrichment"))
 
 
 def safe_int(value: object) -> int:
@@ -75,6 +77,12 @@ def require_database() -> bool:
 
 def first_record(frame: pd.DataFrame) -> dict[str, object]:
     return {} if frame.empty else frame.iloc[0].to_dict()
+
+
+def optional_csv(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
 
 
 def style_app() -> None:
@@ -292,6 +300,57 @@ def hbar_chart(frame: pd.DataFrame, x: str, y: str, title: str, color: str = "#0
     st.altair_chart(polish_chart(chart), use_container_width=True, theme=None)
 
 
+def playlist_subway_frames(overlap: pd.DataFrame, limit: int = 14) -> tuple[pd.DataFrame, pd.DataFrame]:
+    if overlap.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    edges = overlap.head(40).copy()
+    playlist_names = pd.concat([edges["playlist_a_title"], edges["playlist_b_title"]], ignore_index=True)
+    node_stats = (
+        playlist_names.value_counts()
+        .rename_axis("playlist_title")
+        .reset_index(name="connection_count")
+        .head(limit)
+    )
+    selected = set(node_stats["playlist_title"])
+    edges = edges[
+        edges["playlist_a_title"].isin(selected)
+        & edges["playlist_b_title"].isin(selected)
+    ].copy()
+    if edges.empty:
+        return pd.DataFrame(), pd.DataFrame()
+
+    overlap_mentions = pd.concat(
+        [
+            edges[["playlist_a_title", "jaccard_overlap", "overlap_track_count"]].rename(
+                columns={"playlist_a_title": "playlist_title"}
+            ),
+            edges[["playlist_b_title", "jaccard_overlap", "overlap_track_count"]].rename(
+                columns={"playlist_b_title": "playlist_title"}
+            ),
+        ],
+        ignore_index=True,
+    )
+    node_stats = node_stats.merge(
+        overlap_mentions.groupby("playlist_title", as_index=False).agg(
+            max_jaccard=("jaccard_overlap", "max"),
+            overlap_tracks=("overlap_track_count", "sum"),
+        ),
+        on="playlist_title",
+        how="left",
+    )
+
+    lane_count = min(4, max(1, math.ceil(len(node_stats.index) / 4)))
+    node_stats["x"] = node_stats.index // lane_count
+    node_stats["y"] = node_stats.index % lane_count
+    node_lookup = node_stats.set_index("playlist_title")[["x", "y"]]
+
+    edges = edges.merge(node_lookup, left_on="playlist_a_title", right_index=True)
+    edges = edges.merge(node_lookup, left_on="playlist_b_title", right_index=True, suffixes=("_a", "_b"))
+    edges["pair"] = edges["playlist_a_title"] + " / " + edges["playlist_b_title"]
+    return node_stats, edges
+
+
 def source_payload(row: pd.Series) -> dict[str, object]:
     return {
         "database": str(DB_PATH),
@@ -505,6 +564,45 @@ release_eras = query(
         end
     """
 )
+playlist_dna = query(
+    """
+    with top_playlists as (
+        select playlist_id, playlist_title, actual_track_count
+        from yamusic_playlist_signals
+        order by actual_track_count desc, playlist_title
+        limit 14
+    )
+    select
+        tp.playlist_title,
+        coalesce(t.genre, 'unknown') as genre,
+        count(*) as track_count
+    from yamusic_fact_playlist_tracks pt
+    join top_playlists tp on pt.playlist_id = tp.playlist_id
+    left join yamusic_dim_tracks t on pt.track_id = t.track_id
+    group by 1, 2
+    order by 1, 3 desc, 2
+    """
+)
+time_travel = query(
+    """
+    select
+        title,
+        artist_display,
+        coalesce(genre, 'unknown') as genre,
+        release_year,
+        cast(date_trunc('month', first_event_ts) as date) as first_event_month,
+        repeat_signal,
+        playlist_count,
+        liked
+    from yamusic_track_signals
+    where release_year is not null
+      and first_event_ts is not null
+    order by repeat_signal desc, playlist_count desc, title
+    limit 1500
+    """
+)
+artist_locations = optional_csv(ENRICHMENT_DIR / "artist_locations.csv")
+user_location_events = optional_csv(ENRICHMENT_DIR / "user_location_events.csv")
 
 top_artist = first_record(top_artists)
 top_genre = first_record(top_genres)
@@ -619,8 +717,8 @@ if not has_library_data:
     st.warning("No Yandex Music library metadata was returned for this run.")
     st.code("make ingest\nmake dbt-build", language="bash")
 
-tab_story, tab_taste, tab_mix, tab_discovery, tab_playlists, tab_tracks, tab_actions, tab_quality = st.tabs(
-    ["Story", "Taste Map", "Mix Shift", "Rediscovery", "Playlists", "Explorer", "Actions", "Data Quality"]
+tab_story, tab_taste, tab_atlas, tab_mix, tab_discovery, tab_playlists, tab_tracks, tab_actions, tab_quality = st.tabs(
+    ["Story", "Taste Map", "Atlas", "Mix Shift", "Rediscovery", "Playlists", "Explorer", "Actions", "Data Quality"]
 )
 
 with tab_story:
@@ -748,6 +846,220 @@ with tab_taste:
         st.dataframe(artist_map.head(50), use_container_width=True, hide_index=True)
         st.dataframe(genre_table, use_container_width=True, hide_index=True)
 
+with tab_atlas:
+    st.subheader("Genre Atlas")
+    st.markdown(
+        "<div class='sf-section-note'>Not a geographic map: each point is a genre positioned by catalog weight and liked coverage from local metadata.</div>",
+        unsafe_allow_html=True,
+    )
+    atlas_genres = top_genres.copy()
+    if not atlas_genres.empty:
+        atlas_genres["liked_rate"] = atlas_genres["liked_track_count"] / atlas_genres["track_count"].clip(lower=1)
+        atlas_genres["label"] = atlas_genres["genre"].where(atlas_genres["track_count"].rank(method="first", ascending=False) <= 8, "")
+        genre_points = (
+            alt.Chart(atlas_genres)
+            .mark_circle(opacity=0.72)
+            .encode(
+                x=alt.X("track_share:Q", title="share of known library", axis=alt.Axis(format="%")),
+                y=alt.Y("liked_rate:Q", title="liked coverage", axis=alt.Axis(format="%")),
+                size=alt.Size("library_hours:Q", title="library hours", scale=alt.Scale(range=[90, 1500])),
+                color=alt.Color("track_count:Q", title="tracks", scale=alt.Scale(scheme="goldgreen")),
+                tooltip=[
+                    "genre:N",
+                    "track_count:Q",
+                    "liked_track_count:Q",
+                    alt.Tooltip("track_share:Q", format=".1%"),
+                    alt.Tooltip("liked_rate:Q", format=".1%"),
+                    alt.Tooltip("library_hours:Q", format=".1f"),
+                ],
+            )
+        )
+        genre_labels = (
+            alt.Chart(atlas_genres)
+            .mark_text(align="left", baseline="middle", dx=8, color="#17201f", fontSize=12)
+            .encode(
+                x=alt.X("track_share:Q"),
+                y=alt.Y("liked_rate:Q"),
+                text="label:N",
+            )
+        )
+        st.altair_chart(polish_chart((genre_points + genre_labels).properties(height=430)), use_container_width=True, theme=None)
+    else:
+        st.info("No genre profile data for the atlas.")
+
+    st.subheader("Monthly Rhythm")
+    st.markdown(
+        "<div class='sf-section-note'>A compact rhythm grid from period activity; color intensity is activity volume, not inferred listening location.</div>",
+        unsafe_allow_html=True,
+    )
+    if not periods.empty:
+        rhythm = periods.melt(
+            id_vars=["activity_month"],
+            value_vars=["event_count", "liked_events", "playlist_events", "active_tracks", "active_artists", "active_genres"],
+            var_name="signal",
+            value_name="value",
+        )
+        rhythm["signal"] = rhythm["signal"].map(
+            {
+                "event_count": "all events",
+                "liked_events": "liked events",
+                "playlist_events": "playlist events",
+                "active_tracks": "active tracks",
+                "active_artists": "active artists",
+                "active_genres": "active genres",
+            }
+        )
+        rhythm_heatmap = (
+            alt.Chart(rhythm)
+            .mark_rect(cornerRadius=2)
+            .encode(
+                x=alt.X("yearmonth(activity_month):O", title=None),
+                y=alt.Y("signal:N", title=None, sort=["all events", "liked events", "playlist events", "active tracks", "active artists", "active genres"]),
+                color=alt.Color("value:Q", title="value", scale=alt.Scale(scheme="tealblues")),
+                tooltip=["activity_month:T", "signal:N", "value:Q"],
+            )
+            .properties(height=260)
+        )
+        st.altair_chart(polish_chart(rhythm_heatmap), use_container_width=True, theme=None)
+    else:
+        st.info("No monthly period activity for the rhythm view.")
+
+    st.subheader("Music Time Travel")
+    st.markdown(
+        "<div class='sf-section-note'>Release year versus first library event month: a way to see whether the library is discovering old catalog or tracking current releases.</div>",
+        unsafe_allow_html=True,
+    )
+    if not time_travel.empty:
+        time_travel_chart = (
+            alt.Chart(time_travel)
+            .mark_circle(opacity=0.55)
+            .encode(
+                x=alt.X("release_year:Q", title="release year", scale=alt.Scale(zero=False)),
+                y=alt.Y("first_event_month:T", title="first library event"),
+                size=alt.Size("repeat_signal:Q", title="repeat signal", scale=alt.Scale(range=[25, 700])),
+                color=alt.Color("genre:N", title="genre", legend=None),
+                tooltip=["title:N", "artist_display:N", "genre:N", "release_year:Q", "first_event_month:T", "repeat_signal:Q", "playlist_count:Q"],
+            )
+            .properties(height=390)
+        )
+        st.altair_chart(polish_chart(time_travel_chart), use_container_width=True, theme=None)
+    else:
+        st.info("No release-year and event-month pairs are available for time travel.")
+
+    st.subheader("Playlist Subway")
+    st.markdown(
+        "<div class='sf-section-note'>Lines connect playlists with shared tracks; thicker lines mean higher Jaccard overlap.</div>",
+        unsafe_allow_html=True,
+    )
+    subway_nodes, subway_edges = playlist_subway_frames(playlist_overlap)
+    if not subway_nodes.empty and not subway_edges.empty:
+        edge_chart = (
+            alt.Chart(subway_edges)
+            .mark_rule(opacity=0.58, color="#66736f")
+            .encode(
+                x=alt.X("x_a:Q", title=None, axis=None),
+                y=alt.Y("y_a:Q", title=None, axis=None, scale=alt.Scale(reverse=True)),
+                x2="x_b:Q",
+                y2="y_b:Q",
+                size=alt.Size("jaccard_overlap:Q", title="overlap", scale=alt.Scale(range=[1, 9])),
+                tooltip=[
+                    "pair:N",
+                    "overlap_track_count:Q",
+                    alt.Tooltip("jaccard_overlap:Q", format=".1%"),
+                ],
+            )
+        )
+        node_chart = (
+            alt.Chart(subway_nodes)
+            .mark_circle(color="#0f766e", opacity=0.88)
+            .encode(
+                x=alt.X("x:Q", title=None, axis=None),
+                y=alt.Y("y:Q", title=None, axis=None, scale=alt.Scale(reverse=True)),
+                size=alt.Size("connection_count:Q", title="connections", scale=alt.Scale(range=[180, 900])),
+                tooltip=[
+                    "playlist_title:N",
+                    "connection_count:Q",
+                    "overlap_tracks:Q",
+                    alt.Tooltip("max_jaccard:Q", format=".1%"),
+                ],
+            )
+        )
+        node_labels = (
+            alt.Chart(subway_nodes)
+            .mark_text(align="left", baseline="middle", dx=12, color="#17201f", fontSize=12)
+            .encode(x="x:Q", y=alt.Y("y:Q", scale=alt.Scale(reverse=True)), text="playlist_title:N")
+        )
+        st.altair_chart(polish_chart((edge_chart + node_chart + node_labels).properties(height=380)), use_container_width=True, theme=None)
+    else:
+        st.info("No playlist overlap edges are available for the subway view.")
+
+    st.subheader("Playlist DNA")
+    st.markdown(
+        "<div class='sf-section-note'>A matrix of playlist composition by genre. This is more useful than overlap when only a few playlists share tracks directly.</div>",
+        unsafe_allow_html=True,
+    )
+    if not playlist_dna.empty:
+        dna_chart = (
+            alt.Chart(playlist_dna)
+            .mark_rect()
+            .encode(
+                x=alt.X("genre:N", title=None, sort="-y"),
+                y=alt.Y("playlist_title:N", title=None, sort="-x"),
+                color=alt.Color("track_count:Q", title="tracks", scale=alt.Scale(scheme="goldgreen")),
+                tooltip=["playlist_title:N", "genre:N", "track_count:Q"],
+            )
+            .properties(height=max(280, min(620, playlist_dna["playlist_title"].nunique() * 34)))
+        )
+        st.altair_chart(polish_chart(dna_chart), use_container_width=True, theme=None)
+    else:
+        st.info("No playlist DNA rows are available.")
+
+    st.subheader("Geo Atlas readiness")
+    st.markdown(
+        "<div class='sf-section-note'>Maps stay opt-in. Current Yandex Music metadata has no listening location, so map layers need user-provided location timelines or artist-location enrichment.</div>",
+        unsafe_allow_html=True,
+    )
+    geo_cols = st.columns(2)
+    geo_cols[0].metric("Artist location rows", compact_int(len(artist_locations.index)))
+    geo_cols[1].metric("User location rows", compact_int(len(user_location_events.index)))
+    if not artist_locations.empty and {"latitude", "longitude"}.issubset(artist_locations.columns):
+        st.caption("Artist-associated geography. This is not evidence of where you listened.")
+        artist_map = artist_locations.rename(columns={"latitude": "lat", "longitude": "lon"}).copy()
+        st.map(artist_map[["lat", "lon"]].dropna())
+    elif not user_location_events.empty and {"latitude", "longitude"}.issubset(user_location_events.columns):
+        st.caption("User-provided location timeline. Events need timestamp matching before this becomes a listening map.")
+        user_map = user_location_events.rename(columns={"latitude": "lat", "longitude": "lon"}).copy()
+        st.map(user_map[["lat", "lon"]].dropna())
+    else:
+        st.info(
+            "Add `data/enrichment/artist_locations.csv` or `data/enrichment/user_location_events.csv` "
+            "with `latitude` and `longitude` columns to unlock map previews."
+        )
+        st.code(
+            "artist_name,city,country_code,latitude,longitude,confidence,source\n"
+            "Oxxxymiron,London,GB,51.5072,-0.1276,0.6,manual\n\n"
+            "started_at,ended_at,city,country_code,latitude,longitude,confidence,source\n"
+            "2024-08-01T00:00:00Z,2024-08-15T00:00:00Z,Tbilisi,GE,41.7151,44.8271,0.8,manual_city_timeline",
+            language="csv",
+        )
+
+    with st.expander("Atlas source rows"):
+        if not atlas_genres.empty:
+            atlas_table = atlas_genres.drop(columns=["label"], errors="ignore").copy()
+            atlas_table["track_share"] = atlas_table["track_share"].map(lambda value: f"{value * 100:.1f}%")
+            atlas_table["liked_rate"] = atlas_table["liked_rate"].map(lambda value: f"{value * 100:.1f}%")
+            st.dataframe(atlas_table, use_container_width=True, hide_index=True)
+        if not periods.empty:
+            st.dataframe(periods, use_container_width=True, hide_index=True)
+        if not playlist_overlap.empty:
+            overlap_table = playlist_overlap.copy()
+            overlap_table["jaccard_overlap"] = overlap_table["jaccard_overlap"].map(lambda value: f"{value * 100:.1f}%")
+            st.dataframe(overlap_table, use_container_width=True, hide_index=True)
+        if not playlist_dna.empty:
+            st.dataframe(playlist_dna, use_container_width=True, hide_index=True)
+        if not time_travel.empty:
+            st.dataframe(time_travel.head(200), use_container_width=True, hide_index=True)
+
 with tab_mix:
     st.subheader("Genre heatmap")
     st.markdown("<div class='sf-section-note'>A Wrapped-style view of when genres entered the library metadata stream.</div>", unsafe_allow_html=True)
@@ -811,6 +1123,27 @@ with tab_discovery:
     c1.metric("Filtered rediscovery tracks", compact_int(len(rediscovery.index)))
     c2.metric("Zero-playlist liked tracks", compact_int((rediscovery["playlist_count"] == 0).sum() if not rediscovery.empty else 0))
     c3.metric("Top repeat in queue", compact_int(rediscovery["repeat_signal"].max() if not rediscovery.empty else 0))
+
+    st.subheader("Rediscovery quadrants")
+    st.markdown(
+        "<div class='sf-section-note'>High repeat and low playlist coverage is the most actionable corner: tracks you seem to return to but have not organized.</div>",
+        unsafe_allow_html=True,
+    )
+    if not filtered_tracks.empty:
+        quadrant_chart = (
+            alt.Chart(filtered_tracks)
+            .mark_circle(opacity=0.56)
+            .encode(
+                x=alt.X("playlist_count:Q", title="playlist coverage"),
+                y=alt.Y("repeat_signal:Q", title="repeat signal"),
+                size=alt.Size("event_count:Q", title="library events", scale=alt.Scale(range=[20, 650])),
+                color=alt.Color("liked:N", title="liked", scale=alt.Scale(range=["#a16207", "#0f766e"])),
+                tooltip=["title:N", "artist_display:N", "genre:N", "playlist_count:Q", "repeat_signal:Q", "event_count:Q"],
+            )
+            .properties(height=360)
+        )
+        st.altair_chart(polish_chart(quadrant_chart), use_container_width=True, theme=None)
+
     render_track_cards(rediscovery, limit=8)
 
     st.subheader("Repeat signals")
