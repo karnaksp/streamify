@@ -1,0 +1,235 @@
+version: 2
+
+models:
+  - name: stg_yamusic_tracks
+    description: Normalized Yandex Music track metadata from local raw JSONL.
+    columns:
+      - name: track_id
+        tests: [not_null, unique]
+      - name: title
+        tests: [not_null]
+
+  - name: stg_yamusic_artists
+    description: Normalized artist metadata from Yandex Music tracks.
+    columns:
+      - name: artist_id
+        tests: [not_null, unique]
+      - name: artist_name
+        tests: [not_null]
+
+  - name: stg_yamusic_playlists
+    description: User playlists from Yandex Music.
+    columns:
+      - name: playlist_id
+        tests: [not_null, unique]
+
+  - name: stg_yamusic_playlist_tracks
+    description: Track membership in Yandex Music playlists.
+    columns:
+      - name: playlist_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_yamusic_playlists')
+                field: playlist_id
+      - name: track_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_yamusic_tracks')
+                field: track_id
+
+  - name: stg_yamusic_user_library_events
+    description: Synthetic library events derived from liked tracks and playlist membership.
+    columns:
+      - name: event_id
+        tests: [not_null, unique]
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['liked_track', 'playlist_membership']
+
+  - name: stg_yamusic_manifest
+    description: Latest raw ingestion manifest with source type, generation time and per-dataset row counts.
+    columns:
+      - name: manifest_source
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['sample', 'yandex_music']
+      - name: manifest_generated_at
+        tests: [not_null]
+      - name: adapter_name
+        tests: [not_null]
+      - name: adapter_version
+        tests: [not_null]
+      - name: client_library
+        tests: [not_null]
+      - name: diagnostic_liked_shortcuts_seen
+        tests: [not_null]
+      - name: diagnostic_playlist_tracks_seen
+        tests: [not_null]
+
+  - name: yamusic_dim_tracks
+    description: Track dimension for local music self-analytics.
+    columns:
+      - name: track_id
+        tests: [not_null, unique]
+      - name: genre
+        description: Optional Yandex Music genre when available; null means the source did not expose genre metadata.
+
+  - name: yamusic_dim_artists
+    description: Artist dimension for local music self-analytics.
+    columns:
+      - name: artist_id
+        tests: [not_null, unique]
+
+  - name: yamusic_dim_playlists
+    description: Playlist dimension with declared and observed track counts.
+    columns:
+      - name: playlist_id
+        tests: [not_null, unique]
+
+  - name: yamusic_fact_playlist_tracks
+    description: Playlist-track bridge fact table.
+
+  - name: yamusic_fact_library_events
+    description: User-library events derived from the available Yandex Music metadata.
+    columns:
+      - name: event_id
+        tests: [not_null, unique]
+
+  - name: yamusic_artist_affinity
+    description: Artist-level concentration and playlist affinity metrics.
+
+  - name: yamusic_track_signals
+    description: Track-level repeat and underrated signals for self-analytics.
+    columns:
+      - name: track_id
+        tests:
+          - not_null
+          - unique
+      - name: underrated_flag
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+  - name: yamusic_period_activity
+    description: Month-level activity timeline derived from available library events.
+    columns:
+      - name: activity_month
+        tests:
+          - not_null
+          - unique
+
+  - name: yamusic_genre_profile
+    description: Genre distribution and diversity profile when genre metadata is available.
+    columns:
+      - name: genre
+        tests:
+          - not_null
+          - unique
+
+  - name: yamusic_genre_periods
+    description: Month-by-genre activity distribution for spotting genre shifts over time.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [activity_month, genre]
+    columns:
+      - name: activity_month
+        tests:
+          - not_null
+      - name: genre
+        tests:
+          - not_null
+      - name: event_share_in_month
+        tests:
+          - not_null
+
+  - name: yamusic_playlist_overlap
+    description: Pairwise playlist overlap with Jaccard similarity.
+
+  - name: yamusic_playlist_signals
+    description: Playlist-level uniqueness, overlap and underrated playlist signals.
+    columns:
+      - name: playlist_id
+        tests:
+          - not_null
+          - unique
+      - name: underrated_playlist_flag
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+  - name: yamusic_library_profile
+    description: One-row self-analytics profile for the local library snapshot.
+    columns:
+      - name: manifest_source
+        description: Source of the latest raw ingestion run, either deterministic sample data or real Yandex Music metadata.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['sample', 'yandex_music']
+      - name: adapter_name
+        description: Ingestion adapter that wrote the latest raw manifest.
+        tests: [not_null]
+      - name: adapter_version
+        description: Local ingestion adapter version from the `yamusic_ingest` package.
+        tests: [not_null]
+      - name: diagnostic_liked_shortcuts_fetch_failed
+        description: Count of liked-track shortcuts that failed hydration after retries; count only, no IDs or titles.
+        tests: [not_null]
+      - name: diagnostic_liked_tracks_duplicate_skipped
+        description: Count of duplicate liked-track shortcuts skipped after the first stable track ID was written.
+        tests: [not_null]
+      - name: diagnostic_liked_albums_seen
+        description: Count of liked album metadata objects returned by Yandex Music.
+        tests: [not_null]
+      - name: diagnostic_liked_albums_written
+        description: Count of liked album metadata objects written into the local album dimension feed.
+        tests: [not_null]
+      - name: diagnostic_liked_artists_seen
+        description: Count of liked artist metadata objects returned by Yandex Music.
+        tests: [not_null]
+      - name: diagnostic_liked_artists_written
+        description: Count of liked artist metadata objects written into the local artist dimension feed.
+        tests: [not_null]
+      - name: diagnostic_liked_playlists_seen
+        description: Count of liked playlist metadata objects returned by Yandex Music.
+        tests: [not_null]
+      - name: diagnostic_liked_playlists_written
+        description: Count of liked playlist metadata objects written into the local playlist dimension feed.
+        tests: [not_null]
+      - name: diagnostic_playlist_tracks_missing_track_id
+        description: Count of playlist track entries skipped because no stable track ID was exposed.
+        tests: [not_null]
+      - name: diagnostic_playlist_tracks_fetch_failed
+        description: Count of playlist track shortcuts that failed full-track hydration after retries; rows may still be written from shortcut metadata.
+        tests: [not_null]
+      - name: diagnostic_playlist_tracks_duplicate_skipped
+        description: Count of duplicate playlist-track memberships skipped after the first playlist-track pair was written.
+        tests: [not_null]
+      - name: raw_tracks_sha256
+        description: SHA256 checksum of the raw tracks JSONL file recorded in the ingestion manifest.
+        tests: [not_null]
+      - name: raw_playlist_tracks_sha256
+        description: SHA256 checksum of the raw playlist-track JSONL file recorded in the ingestion manifest.
+        tests: [not_null]
+      - name: raw_user_library_events_sha256
+        description: SHA256 checksum of the raw user-library-events JSONL file recorded in the ingestion manifest.
+        tests: [not_null]
+      - name: stale_ingestion_flag
+        description: 1 when no ingestion timestamp is present or the newest local library event is older than 168 hours.
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]

@@ -1,1 +1,14 @@
 logs/
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/*
+!data/.gitkeep
+*.duckdb
+*.duckdb.wal
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+public/
