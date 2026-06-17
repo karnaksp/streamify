@@ -1,25 +1,35 @@
 # Streamify
 
-Local-first self-analytics for your Yandex Music metadata.
+Локальная self-analytics платформа для вашей Яндекс Музыки.
 
-Streamify turns a Yandex Music library into a reproducible local lakehouse: raw JSONL metadata, DuckDB/dbt marts, Streamlit dashboard, static summary, JSON snapshot, CSV action queues and GitHub Pages documentation. It stores metadata and derived analytics only. It does not download or store audio.
+Streamify превращает музыкальную библиотеку в воспроизводимый локальный lakehouse: сырые JSONL-метаданные, DuckDB/dbt-марты, Streamlit dashboard, Markdown-отчет, JSON snapshot, CSV-очереди действий и GitHub Pages документацию. Проект хранит только метаданные и производные аналитические признаки. Аудио не скачивается, не сохраняется и не воспроизводится.
 
-## Product Value
+## Зачем Это Нужно
 
-Streamify answers practical questions about a personal music library:
+Streamify отвечает на прикладные вопросы о личной музыкальной библиотеке:
 
-- which artists, tracks and genres dominate the library;
-- how taste changes over months and release eras;
-- which liked tracks are under-playlisted and worth rediscovering;
-- which playlists overlap, stand out or need cleanup;
-- how complete and fresh the local data is;
-- what future location enrichment would need before map views can be trusted.
+- какие артисты, треки и жанры реально доминируют;
+- как меняется вкус по месяцам, эпохам релизов и жанровым периодам;
+- какие любимые треки недопредставлены в плейлистах и стоят повторного открытия;
+- какие плейлисты пересекаются, выделяются или требуют чистки;
+- насколько полные, свежие и надежные локальные данные;
+- какие данные нужны для будущих карт прослушивания без опасных догадок о геолокации.
 
-The current dashboard is chart-first: `Story`, `Taste Map`, `Atlas`, `Mix Shift`, `Rediscovery`, `Playlists`, `Explorer`, `Actions` and `Data Quality`.
+Дашборд построен как продуктовый аналитический интерфейс, а не набор таблиц: `Story`, `Taste Map`, `Atlas`, `Mix Shift`, `Rediscovery`, `Playlists`, `Explorer`, `Actions`, `Data Quality`.
 
-## First Local Run
+## Демонстрация Дашборда
 
-Run a deterministic local sample with no credentials:
+Скриншоты ниже собираются из локального sample-прогона и не содержат приватных данных аккаунта.
+
+![Обзор Streamify dashboard](docs/assets/dashboard-story.png)
+
+![Atlas и визуальные инсайты](docs/assets/dashboard-atlas.png)
+
+![Actions и очереди рекомендаций](docs/assets/dashboard-actions.png)
+
+## Быстрый Локальный Запуск
+
+Запуск на sample-данных без токена:
 
 ```bash
 cp .env.example .env
@@ -28,43 +38,45 @@ make acceptance-local
 make dashboard
 ```
 
-Then open the Streamlit URL printed by `make dashboard`.
+После этого откройте URL, который напечатает `make dashboard`.
 
-Docker Compose uses the `local` profile, and `.env.example` pins `DBT_THREADS=1` for predictable laptop builds. Make targets load `.env` through `scripts/run_with_dotenv.py`, so secrets are passed through the process environment instead of Make parsing.
+Docker Compose использует профиль `local`, а `.env.example` задает `DBT_THREADS=1`, чтобы сборка была предсказуемой на ноутбуке. Make-команды загружают `.env` через `scripts/run_with_dotenv.py`, поэтому секреты передаются через environment, а не парсятся Makefile.
 
-Run against your Yandex Music account:
+Запуск на вашей Яндекс Музыке:
 
 ```bash
 cp .env.example .env
 make token-help
-# Put YANDEX_MUSIC_TOKEN into .env.
+# Добавьте YANDEX_MUSIC_TOKEN в .env.
 make acceptance-real
 make dashboard
 ```
 
-## Main Commands
+`make acceptance-real` падает, если последний manifest не доказывает `source=yandex_music`.
+
+## Основные Команды
 
 ```bash
-make help                 # command map
-make status               # safe local readiness/status hints
-make token-help           # token setup guide, without printing secrets
-make ingest               # real account metadata ingestion
-make ingest-sample        # deterministic sample metadata
-make raw-contract         # raw JSONL/manifest validation
-make dbt-build            # local DuckDB/dbt marts
-make report               # markdown summary, JSON snapshot, CSV queues
-make snapshot             # JSON snapshot only
-make recommendations      # CSV action queues only
-make readiness-real       # require latest manifest source=yandex_music
+make help                 # карта команд
+make status               # безопасная диагностика локального состояния
+make token-help           # подсказка по токену без печати секретов
+make ingest               # ingestion метаданных реального аккаунта
+make ingest-sample        # детерминированные sample-данные
+make raw-contract         # проверка raw JSONL и manifest
+make dbt-build            # локальные DuckDB/dbt-марты
+make report               # Markdown summary, JSON snapshot, CSV queues
+make snapshot             # только JSON snapshot
+make recommendations      # только CSV action queues
+make readiness-real       # требовать source=yandex_music
 make dashboard-smoke      # Streamlit content + HTTP smoke
-make pages-site           # static GitHub Pages site in public/
-make test                 # full local quality gate
+make pages-site           # статический GitHub Pages сайт в public/
+make test                 # полный локальный quality gate
 make up-local             # Docker Compose local product profile
-make compose-smoke-real   # Docker Compose smoke against a configured token
-make clean-local          # remove generated local artifacts
+make compose-smoke-real   # Docker Compose smoke с настроенным токеном
+make clean-local          # удалить локально сгенерированные артефакты
 ```
 
-## Local Artifacts
+## Локальные Артефакты
 
 - Raw metadata: `data/raw/yamusic/*.jsonl`
 - DuckDB warehouse: `data/streamify.duckdb`
@@ -73,21 +85,21 @@ make clean-local          # remove generated local artifacts
 - CSV action queues: `data/recommendations/*.csv`
 - Optional enrichment inputs: `data/enrichment/*.csv`
 
-All generated local artifacts are ignored by git. `.env` is ignored and must not be committed.
+Все локально сгенерированные артефакты игнорируются git. `.env` тоже игнорируется и не должен попадать в коммиты.
 
-`make clean-local` removes generated raw data, reports, DuckDB files and dbt `target`/`logs`/`dbt_packages` artifacts without touching `.env`.
+`make clean-local` удаляет raw data, отчеты, DuckDB-файлы и dbt `target`/`logs`/`dbt_packages`, но не трогает `.env`.
 
-## Data Architecture
+## Архитектура Данных
 
 ```text
-Yandex Music metadata
+Метаданные Яндекс Музыки
   -> yamusic_ingest raw JSONL
   -> dbt staging views
   -> DuckDB marts
-  -> Streamlit dashboard, reports, snapshots and recommendation queues
+  -> Streamlit dashboard, reports, snapshots, recommendation queues
 ```
 
-Core marts include:
+Ключевые марты:
 
 - `yamusic_dim_tracks`, `yamusic_dim_artists`, `yamusic_dim_albums`, `yamusic_dim_playlists`
 - `yamusic_fact_library_events`, `yamusic_fact_playlist_tracks`
@@ -95,50 +107,49 @@ Core marts include:
 - `yamusic_track_signals`, `yamusic_playlist_signals`, `yamusic_playlist_overlap`
 - `yamusic_library_profile`
 
-See [docs/yamusic_lineage.md](docs/yamusic_lineage.md) for raw-to-dashboard lineage.
+Lineage описан в [docs/yamusic_lineage.md](docs/yamusic_lineage.md).
 
-## Dashboard
+## Что Показывает Дашборд
 
-The Streamlit dashboard focuses on evidence, not table dumps:
+- `Story`: профиль библиотеки, timeline активности и жанровый отпечаток.
+- `Taste Map`: гравитация артистов и разнообразие жанров.
+- `Atlas`: genre atlas, monthly rhythm, music time travel, playlist subway, playlist DNA и Geo Atlas readiness.
+- `Mix Shift`: жанровая heatmap, release-era mix и focus genre mix.
+- `Rediscovery`: любимые треки, которые мало представлены в плейлистах.
+- `Playlists`: здоровье плейлистов и overlap.
+- `Explorer`: фильтруемые карточки треков и точечный поиск.
+- `Actions`: следующие действия и downloadable queues.
+- `Data Quality`: source, raw counts, checksums и ingestion diagnostics.
 
-- `Story`: profile metrics, activity timeline and genre fingerprint.
-- `Taste Map`: artist gravity and genre diversity.
-- `Atlas`: genre atlas, monthly rhythm, music time travel, playlist subway, playlist DNA and Geo Atlas readiness.
-- `Mix Shift`: genre heatmap, release-era mix and focus genre mix.
-- `Rediscovery`: under-playlisted liked tracks and repeat quadrants.
-- `Playlists`: playlist health and overlap.
-- `Explorer`: filtered track cards and exact lookup.
-- `Actions`: next steps and downloadable queues.
-- `Data Quality`: source, raw counts, checksums and ingestion diagnostics.
+## География И Карты
 
-## Optional Location Enrichment
+Метаданные Яндекс Музыки не содержат надежную геолокацию прослушивания. Streamify не делает вид, что регион аккаунта, язык плейлиста, жанр или происхождение артиста равны вашему местоположению.
 
-Yandex Music metadata does not contain reliable listening location. Streamify therefore does not infer where listening happened from account region, playlist language, genre or artist origin.
+Будущие карты требуют явных локальных enrichment-файлов в `data/enrichment`:
 
-Future map views require explicit local enrichment files under `data/enrichment`:
+- `artist_locations.csv`: места, связанные с артистами;
+- `user_location_events.csv`: пользовательская timeline геолокации.
 
-- `artist_locations.csv` for artist-associated places;
-- `user_location_events.csv` for user-provided location timelines.
-
-See [docs/location_enrichment.md](docs/location_enrichment.md) for schemas, source ideas, privacy constraints and timestamp join caveats.
+Схемы, источники и privacy-ограничения описаны в [docs/location_enrichment.md](docs/location_enrichment.md).
 
 ## GitHub Pages
 
-`make pages-site` builds a polished static product site into `public/`. The Pages workflow builds it from sample metadata with `YANDEX_MUSIC_TOKEN` empty, so public documentation is reproducible and does not depend on a private account.
+`make pages-site` собирает современный русскоязычный статический сайт в `public/`. Workflow Pages строит его на sample metadata с пустым `YANDEX_MUSIC_TOKEN`, поэтому публичная документация воспроизводима и не зависит от приватного аккаунта.
 
-The public site includes:
+Публичный сайт включает:
 
-- product overview;
-- local runbook;
-- Atlas and location enrichment guidance;
+- продуктовый overview;
+- локальный runbook;
+- демонстрации dashboard;
+- Atlas и location enrichment;
 - lineage;
 - acceptance matrix;
 - release process;
-- generated sample summary when available.
+- generated sample summary, если он доступен.
 
 ## Quality Gates
 
-`make test` runs the local product gate:
+`make test` запускает локальный product gate:
 
 - repository contract validation;
 - secret/audio artifact guards;
@@ -149,13 +160,11 @@ The public site includes:
 - Pages build;
 - Python compile checks;
 - pytest;
-- Docker Compose config and local profile smoke.
+- Docker Compose config и local profile smoke.
 
-`make acceptance-real` is the real account gate and fails unless the latest manifest proves `source=yandex_music`.
+## Документация
 
-## Documentation
-
-- [Local runbook](docs/yandex_music_local.md)
+- [Локальный runbook](docs/yandex_music_local.md)
 - [Lineage](docs/yamusic_lineage.md)
 - [Product acceptance](docs/product_acceptance.md)
 - [Location enrichment contract](docs/location_enrichment.md)
