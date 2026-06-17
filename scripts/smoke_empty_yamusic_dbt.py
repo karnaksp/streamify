@@ -115,7 +115,6 @@ def main() -> int:
         (RAW_DIR / "_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
         env = os.environ.copy()
-        env["GCP_PROJECT_ID"] = "dummy"
         env["STREAMIFY_RAW_DIR"] = "data/raw/yamusic_empty_smoke"
         env["STREAMIFY_DUCKDB_PATH"] = "data/streamify_empty_smoke.duckdb"
 

@@ -1,179 +1,163 @@
 # Streamify
 
-Local-first music self-analytics for Yandex Music metadata, plus the original Kafka/Spark/Airflow/GCP streaming pipeline.
+Local-first self-analytics for your Yandex Music metadata.
 
-Streamify now has two compatible tracks:
+Streamify turns a Yandex Music library into a reproducible local lakehouse: raw JSONL metadata, DuckDB/dbt marts, Streamlit dashboard, static summary, JSON snapshot, CSV action queues and GitHub Pages documentation. It stores metadata and derived analytics only. It does not download or store audio.
 
-- **Local product track**: ingest your Yandex Music metadata, build DuckDB/dbt marts, and open a Streamlit dashboard without cloud cost.
-- **Legacy cloud engineering track**: keep the original Eventsim, Kafka, Spark Streaming, Airflow, dbt BigQuery and GCP architecture for portfolio-grade data engineering.
+## Product Value
 
-The local product track stores metadata and derived analytics only. It does not download or store audio.
+Streamify answers practical questions about a personal music library:
 
-## Local Yandex Music Self-Analytics
+- which artists, tracks and genres dominate the library;
+- how taste changes over months and release eras;
+- which liked tracks are under-playlisted and worth rediscovering;
+- which playlists overlap, stand out or need cleanup;
+- how complete and fresh the local data is;
+- what future location enrichment would need before map views can be trusted.
 
-Product value: turn your own Yandex Music library into a reproducible local lakehouse that answers practical questions about your listening taste and library shape: favorite artists and tracks, genre shifts, playlist overlap, repeated patterns, diversity, active periods, underrated tracks and playlists, local data quality, and what data is missing.
+The current dashboard is chart-first: `Story`, `Taste Map`, `Atlas`, `Mix Shift`, `Rediscovery`, `Playlists`, `Explorer`, `Actions` and `Data Quality`.
 
-First run without credentials:
+## First Local Run
+
+Run a deterministic local sample with no credentials:
 
 ```bash
 cp .env.example .env
 make setup
-make help
-make status
-make ingest-sample
-make raw-contract
-make dbt-build
-make doctor
-make report
-make readiness
-make dashboard-smoke
+make acceptance-local
 make dashboard
 ```
 
 Then open the Streamlit URL printed by `make dashboard`.
 
-Run with your account metadata:
+Docker Compose uses the `local` profile, and `.env.example` pins `DBT_THREADS=1` for predictable laptop builds. Make targets load `.env` through `scripts/run_with_dotenv.py`, so secrets are passed through the process environment instead of Make parsing.
+
+Run against your Yandex Music account:
 
 ```bash
 cp .env.example .env
 make token-help
-# Get a Yandex Music OAuth token with an external helper, then set YANDEX_MUSIC_TOKEN in .env.
+# Put YANDEX_MUSIC_TOKEN into .env.
 make acceptance-real
 make dashboard
 ```
 
-Local defaults:
-
-- command guide: `make help`
-- token guide: `make token-help`, which checks `.env`, installed `yandex-music` capabilities, and next steps without printing token values.
-- raw metadata: `data/raw/yamusic/*.jsonl`
-- local warehouse: `data/streamify.duckdb`
-- local configuration: `.env` is loaded by the Python CLI/scripts and by `scripts/run_with_dotenv.py` for Makefile commands, so token and path overrides work without Make parsing token values.
-- dbt target: `dbt build --profiles-dir . --target local --select yamusic`
-- dbt packages: `make setup` and `make dbt-build` both run `dbt deps`, so a fresh checkout does not rely on ignored local `dbt/dbt_packages`.
-- dbt local threads: `DBT_THREADS=1` by default for stable laptop/container runs; raise it explicitly if your environment is stable.
-- local status: `make status` prints safe configuration/readiness hints without calling Yandex Music or printing token values.
-- token preflight: `make preflight` checks real Yandex Music API access without writing raw data or printing the token.
-- dashboard: `streamlit run dashboard/app.py`
-- dashboard smoke: `make dashboard-smoke`
-- static self-analytics report: `make report`, written to `data/streamify_summary.md`
-- structured self-analytics snapshot: `make snapshot`, written to `data/streamify_snapshot.json` for automation and downstream agent workflows.
-- spreadsheet action queues: `make recommendations`, written to `data/recommendations/*.csv` for rediscovery, playlist cleanup, standout playlists, top artists and genre shifts.
-- static GitHub Pages site: `make pages-site`, generated into ignored `public/` from docs and safe sample/report artifacts.
-- readiness audit: `make readiness`, which verifies raw counts, DuckDB marts, report, no audio artifacts and whether the latest run is sample or real Yandex Music metadata.
-- local acceptance check: `make doctor`
-- real-account acceptance: `make acceptance-real`, which also runs `make readiness-real` and fails unless the latest manifest source is `yandex_music`.
-- safety guard: `scripts/check_no_local_sensitive_artifacts.py` keeps root `.env`, Yandex raw data, DuckDB files and local audio out of git.
-- raw schema contract: `make raw-contract`
-- Docker Compose smoke: `make compose-smoke-local`
-- real-account Docker Compose smoke: `make compose-smoke-real`, after `YANDEX_MUSIC_TOKEN` is set.
-- one-command container path: `make up-local`, which loads `.env` through `scripts/run_with_dotenv.py` and runs Docker Compose with the `local` profile. It uses real Yandex Music metadata when `YANDEX_MUSIC_TOKEN` is present in `.env`, otherwise it writes deterministic sample metadata.
-- local reset: `make clean-local` removes generated raw metadata, DuckDB databases, summary/snapshot/recommendations reports, dbt target/logs/packages, and smoke-test artifacts while preserving `.env` and source files.
-
-See [docs/yandex_music_local.md](docs/yandex_music_local.md) for the local architecture, token handling, and limitations. See [docs/yamusic_lineage.md](docs/yamusic_lineage.md) for raw-to-dashboard lineage and model ownership. See [docs/product_acceptance.md](docs/product_acceptance.md) for the requirement-to-command acceptance matrix.
-
-GitHub delivery is managed through issue templates, a PR checklist, sample-data CI, GitHub Pages, and tag-based releases. See [docs/project_management.md](docs/project_management.md) and [docs/release_process.md](docs/release_process.md).
-
-## Слой Качества Данных
-
-Streamify нужен, чтобы построить потоковую аналитику музыкального сервиса: события из Kafka обрабатываются Spark Streaming, складываются в lake/warehouse, а dbt собирает таблицы для dashboard по прослушиваниям, пользователям, песням, артистам, локациям и времени.
-
-В этой итерации добавлен проверяемый data-quality слой для core marts:
-
-- добавлен dbt data-quality слой для core marts: `not_null`, `unique`, `relationships`, `accepted_values`;
-- добавлены singular tests для SCD2 user dimension и orphan dimension keys в `fact_streams`;
-- Airflow DAG теперь запускает `dbt build --select core --profiles-dir . --target prod`, а не только `dbt compile`;
-- добавлена русская документация [docs/data_quality_checks.md](docs/data_quality_checks.md);
-- добавлен CI/static validator `scripts/validate_dbt_quality.py` для проверки dbt quality contract без GCP credentials.
-
-## Мой вклад в этом fork
-
-Базовый проект уже содержит streaming pipeline и cloud setup. Мой добавленный слой отвечает за проверяемость аналитических core marts:
-
-- перевел dbt core-модели с deprecated `dbt_utils.surrogate_key` на `dbt_utils.generate_surrogate_key`;
-- обновил `dbt_utils` до версии `1.3.3` и зафиксировал package lock;
-- добавил schema tests и singular tests для business-critical joins и SCD2-логики;
-- усилил Airflow dbt DAG runtime path через `dbt deps` и `dbt build` с timeout-защитой;
-- добавил статический CI gate, который проверяет dbt tests, Airflow DAG и документацию без GCP credentials.
-
-Локальная проверка:
+## Main Commands
 
 ```bash
-python3 scripts/validate_dbt_quality.py
-python3 -m compileall -q airflow/dags spark_streaming scripts
-cd airflow && GCP_PROJECT_ID=dummy GCP_GCS_BUCKET=dummy docker compose config --quiet
-cd ../kafka && docker compose config --quiet
+make help                 # command map
+make status               # safe local readiness/status hints
+make token-help           # token setup guide, without printing secrets
+make ingest               # real account metadata ingestion
+make ingest-sample        # deterministic sample metadata
+make raw-contract         # raw JSONL/manifest validation
+make dbt-build            # local DuckDB/dbt marts
+make report               # markdown summary, JSON snapshot, CSV queues
+make snapshot             # JSON snapshot only
+make recommendations      # CSV action queues only
+make readiness-real       # require latest manifest source=yandex_music
+make dashboard-smoke      # Streamlit content + HTTP smoke
+make pages-site           # static GitHub Pages site in public/
+make test                 # full local quality gate
+make up-local             # Docker Compose local product profile
+make compose-smoke-real   # Docker Compose smoke against a configured token
+make clean-local          # remove generated local artifacts
 ```
 
-## Description
+## Local Artifacts
 
-### Objective
+- Raw metadata: `data/raw/yamusic/*.jsonl`
+- DuckDB warehouse: `data/streamify.duckdb`
+- Markdown report: `data/streamify_summary.md`
+- JSON snapshot: `data/streamify_snapshot.json`
+- CSV action queues: `data/recommendations/*.csv`
+- Optional enrichment inputs: `data/enrichment/*.csv`
 
-The project will stream events generated from a fake music streaming service (like Spotify) and create a data pipeline that consumes the real-time data. The data coming in would be similar to an event of a user listening to a song, navigating on the website, authenticating. The data would be processed in real-time and stored to the data lake periodically (every two minutes). The hourly batch job will then consume this data, apply transformations, and create the desired tables for our dashboard to generate analytics. We will try to analyze metrics like popular songs, active users, user demographics etc.
+All generated local artifacts are ignored by git. `.env` is ignored and must not be committed.
 
-### Dataset
+`make clean-local` removes generated raw data, reports, DuckDB files and dbt `target`/`logs`/`dbt_packages` artifacts without touching `.env`.
 
-[Eventsim](https://github.com/Interana/eventsim) is a program that generates event data to replicate page requests for a fake music web site. The results look like real use data, but are totally fake. The docker image is borrowed from [viirya's fork](https://github.com/viirya/eventsim) of it, as the original project has gone without maintenance for a few years now.
+## Data Architecture
 
-Eventsim uses song data from [Million Songs Dataset](http://millionsongdataset.com) to generate events. I have used a [subset](http://millionsongdataset.com/pages/getting-dataset/#subset) of 10000 songs.
+```text
+Yandex Music metadata
+  -> yamusic_ingest raw JSONL
+  -> dbt staging views
+  -> DuckDB marts
+  -> Streamlit dashboard, reports, snapshots and recommendation queues
+```
 
-### Tools & Technologies
+Core marts include:
 
-- Cloud - [**Google Cloud Platform**](https://cloud.google.com)
-- Infrastructure as Code software - [**Terraform**](https://www.terraform.io)
-- Containerization - [**Docker**](https://www.docker.com), [**Docker Compose**](https://docs.docker.com/compose/)
-- Stream Processing - [**Kafka**](https://kafka.apache.org), [**Spark Streaming**](https://spark.apache.org/docs/latest/streaming-programming-guide.html)
-- Orchestration - [**Airflow**](https://airflow.apache.org)
-- Transformation - [**dbt**](https://www.getdbt.com)
-- Data Lake - [**Google Cloud Storage**](https://cloud.google.com/storage)
-- Data Warehouse - [**BigQuery**](https://cloud.google.com/bigquery)
-- Data Visualization - [**Data Studio**](https://datastudio.google.com/overview)
-- Language - [**Python**](https://www.python.org)
+- `yamusic_dim_tracks`, `yamusic_dim_artists`, `yamusic_dim_albums`, `yamusic_dim_playlists`
+- `yamusic_fact_library_events`, `yamusic_fact_playlist_tracks`
+- `yamusic_artist_affinity`, `yamusic_genre_profile`, `yamusic_genre_periods`
+- `yamusic_track_signals`, `yamusic_playlist_signals`, `yamusic_playlist_overlap`
+- `yamusic_library_profile`
 
-### Architecture
+See [docs/yamusic_lineage.md](docs/yamusic_lineage.md) for raw-to-dashboard lineage.
 
-![streamify-architecture](images/Streamify-Architecture.jpg)
+## Dashboard
 
-### Final Result
+The Streamlit dashboard focuses on evidence, not table dumps:
 
-![dashboard](images/dashboard.png)
-## Setup
+- `Story`: profile metrics, activity timeline and genre fingerprint.
+- `Taste Map`: artist gravity and genre diversity.
+- `Atlas`: genre atlas, monthly rhythm, music time travel, playlist subway, playlist DNA and Geo Atlas readiness.
+- `Mix Shift`: genre heatmap, release-era mix and focus genre mix.
+- `Rediscovery`: under-playlisted liked tracks and repeat quadrants.
+- `Playlists`: playlist health and overlap.
+- `Explorer`: filtered track cards and exact lookup.
+- `Actions`: next steps and downloadable queues.
+- `Data Quality`: source, raw counts, checksums and ingestion diagnostics.
 
-**WARNING: You will be charged for all the infra setup. You can avail 300$ in credit by creating a new account on GCP.**
-### Pre-requisites
+## Optional Location Enrichment
 
-If you already have a Google Cloud account and a working terraform setup, you can skip the pre-requisite steps.
+Yandex Music metadata does not contain reliable listening location. Streamify therefore does not infer where listening happened from account region, playlist language, genre or artist origin.
 
-- Google Cloud Platform. 
-  - [GCP Account and Access Setup](setup/gcp.md)
-  - [gcloud alternate installation method - Windows](https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/week_1_basics_n_setup/1_terraform_gcp/windows.md#google-cloud-sdk)
-- Terraform
-  - [Setup Terraform](https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/week_1_basics_n_setup/1_terraform_gcp/windows.md#terraform)
+Future map views require explicit local enrichment files under `data/enrichment`:
 
+- `artist_locations.csv` for artist-associated places;
+- `user_location_events.csv` for user-provided location timelines.
 
-### Get Going!
+See [docs/location_enrichment.md](docs/location_enrichment.md) for schemas, source ideas, privacy constraints and timestamp join caveats.
 
-A video walkthrough of how I run my project - [YouTube Video](https://youtu.be/vzoYhI8KTlY)
+## GitHub Pages
 
-- Procure infra on GCP with Terraform - [Setup](setup/terraform.md)
-- (Extra) SSH into your VMs, Forward Ports - [Setup](setup/ssh.md)
-- Setup Kafka Compute Instance and start sending messages from Eventsim - [Setup](setup/kafka.md)
-- Setup Spark Cluster for stream processing - [Setup](setup/spark.md)
-- Setup Airflow on Compute Instance to trigger the hourly data pipeline - [Setup](setup/airflow.md)
+`make pages-site` builds a polished static product site into `public/`. The Pages workflow builds it from sample metadata with `YANDEX_MUSIC_TOKEN` empty, so public documentation is reproducible and does not depend on a private account.
 
+The public site includes:
 
-### Debug
+- product overview;
+- local runbook;
+- Atlas and location enrichment guidance;
+- lineage;
+- acceptance matrix;
+- release process;
+- generated sample summary when available.
 
-If you run into issues, see if you find something in this debug [guide](setup/debug.md).
-### How can I make this better?!
-A lot can still be done :).
-- Choose managed Infra
-  - Cloud Composer for Airflow
-  - Confluent Cloud for Kafka
-- Create your own VPC network
-- Build dimensions and facts incrementally instead of full refresh
-- Create dimensional models for additional business processes
-- Add more visualizations
+## Quality Gates
 
-### Special Mentions
-I'd like to thank the [DataTalks.Club](https://datatalks.club) for offering this Data Engineering course for completely free. All the things I learnt there, enabled me to come up with this project. If you want to upskill on Data Engineering technologies, please check out the [course](https://github.com/DataTalksClub/data-engineering-zoomcamp). :)
+`make test` runs the local product gate:
+
+- repository contract validation;
+- secret/audio artifact guards;
+- empty/private account dbt smoke;
+- sample acceptance flow;
+- product-answer smoke;
+- real-account gate smoke;
+- Pages build;
+- Python compile checks;
+- pytest;
+- Docker Compose config and local profile smoke.
+
+`make acceptance-real` is the real account gate and fails unless the latest manifest proves `source=yandex_music`.
+
+## Documentation
+
+- [Local runbook](docs/yandex_music_local.md)
+- [Lineage](docs/yamusic_lineage.md)
+- [Product acceptance](docs/product_acceptance.md)
+- [Location enrichment contract](docs/location_enrichment.md)
+- [Project management](docs/project_management.md)
+- [Release process](docs/release_process.md)

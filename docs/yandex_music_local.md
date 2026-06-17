@@ -1,6 +1,6 @@
 # Local Yandex Music Analytics
 
-Streamify's local product track builds a personal music self-analytics lakehouse from Yandex Music metadata. It is designed to run on a laptop without GCP credentials or cloud spend.
+Streamify builds a personal music self-analytics lakehouse from Yandex Music metadata. It is designed to run on a laptop without cloud credentials or cloud spend.
 
 No audio is downloaded, stored, transformed, or played by this project. The ingestion adapter only reads metadata exposed to the account by the Yandex Music client library.
 
@@ -158,8 +158,6 @@ The local dbt layer checks:
 - stale ingestion visibility through `yamusic_library_profile.stale_ingestion_flag`, which is raised when the newest local library event is older than 168 hours or missing.
 - bounded retries on external Yandex Music client calls, with unit coverage for transient preflight and track-fetch failures.
 - raw JSONL checksums and ingestion diagnostics in the manifest, DuckDB profile, readiness JSON, dashboard Data Quality tab, JSON snapshot and static report.
-
-The legacy BigQuery/Airflow quality contract remains intact and is still checked by `scripts/validate_dbt_quality.py`.
 
 `scripts/check_no_local_sensitive_artifacts.py` fails when root `.env`, local Yandex raw data, DuckDB warehouse files, or audio files under `data/` are tracked by git. `.env.example` remains safe to commit because it contains an empty token placeholder.
 

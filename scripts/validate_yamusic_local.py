@@ -41,7 +41,11 @@ def main() -> int:
         ".env.example",
         "docs/yamusic_lineage.md",
         "docs/product_acceptance.md",
+        "docs/location_enrichment.md",
+        "dbt/README.md",
         "dbt/models/yamusic/schema.yml",
+        "dbt/tests/assert_yamusic_playlist_tracks_no_orphan_keys.sql",
+        "dbt/tests/assert_yamusic_library_events_no_orphan_keys.sql",
         "scripts/check_no_local_sensitive_artifacts.py",
         "scripts/check_no_audio_artifacts.py",
         "scripts/validate_yamusic_raw_contract.py",
@@ -72,9 +76,61 @@ def main() -> int:
         if not (ROOT / path).exists():
             raise AssertionError(f"Missing required local product file: {path}")
 
+    for path in [
+        "eventsim",
+        "kafka",
+        "spark_streaming",
+        "airflow",
+        "terraform",
+        "setup",
+        "images",
+        "dbt/models/core",
+        "dbt/seeds",
+        "scripts/validate_dbt_quality.py",
+        "scripts/eventsim_startup.sh",
+        "scripts/airflow_startup.sh",
+        "scripts/spark_setup.sh",
+        "scripts/vm_setup.sh",
+    ]:
+        if (ROOT / path).exists():
+            raise AssertionError(f"Legacy demo artifact must be removed: {path}")
+
+    legacy_markers = [
+        "Eventsim",
+        "GCP",
+        "BigQuery",
+        "Kafka",
+        "Spark",
+        "Airflow",
+        "Terraform",
+        "DataTalks",
+        "validate_dbt_quality",
+        "spark_streaming",
+        "eventsim",
+        "dbt-bigquery",
+        "kafka-python",
+        "fact_streams",
+        "dim_users",
+    ]
+    for path in [
+        "README.md",
+        "docs/yandex_music_local.md",
+        "docs/product_acceptance.md",
+        "docs/release_process.md",
+        "dbt/README.md",
+        "dbt/dbt_project.yml",
+        "dbt/profiles.yml",
+        "docker-compose.local.yml",
+        "Makefile",
+        "requirements.txt",
+        "scripts/build_pages_site.py",
+        "scripts/smoke_empty_yamusic_dbt.py",
+    ]:
+        reject_markers(path, legacy_markers)
+
     require_markers(
         "README.md",
-        ["Yandex Music", "DuckDB", "make help", "make status", "make ingest-sample", "make acceptance-real", "make dashboard", "genre shifts", "`local` profile", "DBT_THREADS=1", "scripts/run_with_dotenv.py", "fresh checkout", "make clean-local", "dbt target/logs/packages", "make readiness-real", "make up-local", "make compose-smoke-real", "make snapshot", "make recommendations", "make pages-site", "GitHub Pages", "tag-based releases", "streamify_snapshot.json", "data/recommendations"],
+        ["Yandex Music", "DuckDB", "make help", "make status", "make ingest-sample", "make acceptance-real", "make dashboard", "taste changes", "`local` profile", "DBT_THREADS=1", "scripts/run_with_dotenv.py", "make clean-local", "dbt `target`/`logs`/`dbt_packages`", "make readiness-real", "make up-local", "make compose-smoke-real", "make snapshot", "make recommendations", "make pages-site", "GitHub Pages", "streamify_snapshot.json", "data/recommendations", "Optional Location Enrichment", "Atlas"],
     )
     require_markers(
         "docs/yandex_music_local.md",
@@ -88,7 +144,8 @@ def main() -> int:
         "docs/product_acceptance.md",
         ["Requirement Matrix", "make acceptance-local", "make test", "make acceptance-real", "real_account_verified", "No audio", "Yandex Music metadata ingestion", "make readiness-real", "make compose-smoke-real", "make product-answers-smoke", "stale Parquet cleanup", "Source provenance", "data/streamify_snapshot.json", "make snapshot", "data/recommendations/*.csv", "make recommendations", "dashboard Actions tab"],
     )
-    require_markers("dbt/profiles.yml", ["type: duckdb", "target: dev", "DBT_THREADS"])
+    require_markers("dbt/profiles.yml", ["type: duckdb", "target: local", "DBT_THREADS"])
+    require_markers("dbt/README.md", ["Streamify dbt Models", "Yandex Music self-analytics", "staging/stg_yamusic_*", "marts/yamusic_dim_*", "data/streamify.duckdb"])
     require_markers(".env.example", ["YANDEX_MUSIC_TOKEN=", "STREAMIFY_REPORT_PATH", "STREAMIFY_SNAPSHOT_PATH", "STREAMIFY_RECOMMENDATIONS_DIR", "STREAMIFY_ENRICHMENT_DIR", "DBT_THREADS=1"])
     require_markers(
         "dbt/models/yamusic/schema.yml",
@@ -107,7 +164,7 @@ def main() -> int:
     require_markers(".github/PULL_REQUEST_TEMPLATE.md", ["Product Value", "Data Engineering Impact", "make test", "make acceptance-real"])
     require_markers("docs/project_management.md", ["Agent Lanes", "Repo/Build", "Yandex Ingestion", "QA/Integration", "v0.1.0-local-mvp"])
     require_markers("docs/release_process.md", ["Release Checklist", "GitHub Pages", "sample metadata", "git tag vX.Y.Z"])
-    require_markers("scripts/build_pages_site.py", ["PUBLIC_DIR", "Sample Summary", "streamify_summary.md", "index.html"])
+    require_markers("scripts/build_pages_site.py", ["PUBLIC_DIR", "Product Overview", "Atlas + Location", "streamify_summary.md", "location.html", "doc-card", "metric-strip", "inline_markdown", "index.html"])
     require_markers("scripts/yamusic_token_help.py", ["TOKEN_HELPER_URL", "supports_device_auth", "token_configured", "make preflight", "make acceptance-real"])
     require_markers("scripts/check_no_local_sensitive_artifacts.py", ["FORBIDDEN_TRACKED_PATHS", "data/raw/yamusic", "DuckDB files", "audio artifacts are tracked"])
     require_markers("scripts/check_no_audio_artifacts.py", ["AUDIO_EXTENSIONS", "must not store audio files"])
