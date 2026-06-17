@@ -1,25 +1,25 @@
-## Summary
+## Что изменилось
 
 - 
 
-## Product Value
+## Продуктовая ценность
 
 - 
 
-## Data Engineering Impact
+## Влияние на данные
 
 - Raw/Bronze:
 - Silver/dbt:
 - Gold/dashboard:
 - Privacy/security:
 
-## Checks
+## Проверки
 
 - [ ] `make test`
 - [ ] `make acceptance-local`
-- [ ] `make acceptance-real` when changing real-account ingestion
-- [ ] No `.env`, raw Yandex Music data, DuckDB files, or audio artifacts are tracked
+- [ ] `make acceptance-real`, если менялся ingestion реального аккаунта
+- [ ] В git не попали `.env`, raw-данные Яндекс Музыки, DuckDB-файлы или audio artifacts
 
-## Notes
+## Заметки
 
 - 

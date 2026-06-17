@@ -1,12 +1,12 @@
-name: Agent task
-description: Track a multi-agent implementation task for Streamify.
-title: "[Agent] "
+name: Агентская задача
+description: Задача для одного из рабочих направлений Streamify.
+title: "[Агент] "
 labels: ["agent-task", "triage"]
 body:
   - type: dropdown
     id: agent
     attributes:
-      label: Agent lane
+      label: Направление
       options:
         - Repo/Build
         - Yandex Ingestion
@@ -18,16 +18,16 @@ body:
   - type: textarea
     id: objective
     attributes:
-      label: Objective
-      description: State the product or engineering outcome, not only the code change.
-      placeholder: "Example: Make real-account ingestion observable and idempotent for playlist metadata."
+      label: Цель
+      description: Опишите продуктовый или инженерный результат, а не только изменение кода.
+      placeholder: "Например: сделать ingestion плейлистов наблюдаемым и идемпотентным для реального аккаунта."
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
-      label: Acceptance checks
-      description: Commands, artifacts, or runtime behavior that prove completion.
+      label: Проверка готовности
+      description: Команды, артефакты или runtime-поведение, которые доказывают результат.
       placeholder: |
         - make raw-contract
         - make dbt-build
@@ -37,5 +37,5 @@ body:
   - type: textarea
     id: notes
     attributes:
-      label: Notes and risks
-      description: API risk, privacy constraints, data quality assumptions, or dependencies.
+      label: Заметки и риски
+      description: API-риск, privacy-ограничения, предположения о качестве данных или зависимости.

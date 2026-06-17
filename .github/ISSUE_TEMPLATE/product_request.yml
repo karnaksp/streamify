@@ -1,26 +1,26 @@
-name: Product request
-description: Propose a user-facing analytics or workflow improvement.
-title: "[Product] "
+name: Продуктовая идея
+description: Предложение для аналитики, интерфейса или пользовательского сценария.
+title: "[Продукт] "
 labels: ["product", "triage"]
 body:
   - type: textarea
     id: user_value
     attributes:
-      label: Product value
-      description: What decision or action should this help a listener take?
+      label: Польза
+      description: Какое решение или действие это поможет принять слушателю?
     validations:
       required: true
   - type: textarea
     id: data
     attributes:
-      label: Data needed
-      description: Which Yandex Music metadata, marts, or dashboard views are involved?
+      label: Нужные данные
+      description: Какие метаданные Яндекс Музыки, марты или экраны dashboard нужны?
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
-      label: Acceptance checks
+      label: Проверка готовности
       placeholder: |
         - make product-answers-smoke
         - make dashboard-smoke

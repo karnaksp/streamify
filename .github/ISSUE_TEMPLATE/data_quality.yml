@@ -1,12 +1,12 @@
-name: Data quality issue
-description: Report a raw, dbt, dashboard, or readiness quality issue.
+name: Проблема качества данных
+description: Ошибка в raw, dbt, dashboard или readiness-проверках.
 title: "[DQ] "
 labels: ["data-quality", "triage"]
 body:
   - type: dropdown
     id: layer
     attributes:
-      label: Affected layer
+      label: Слой данных
       options:
         - Raw/Bronze
         - Silver/dbt staging
@@ -18,20 +18,20 @@ body:
   - type: textarea
     id: symptom
     attributes:
-      label: Symptom
-      description: What failed or looked wrong?
+      label: Симптом
+      description: Что упало или выглядит неверно?
     validations:
       required: true
   - type: textarea
     id: evidence
     attributes:
-      label: Evidence
-      description: Command output, table/model name, manifest counts, or screenshot notes. Do not paste tokens or raw private data.
+      label: Доказательства
+      description: Вывод команды, имя таблицы/модели, manifest counts или заметки по скриншоту. Не вставляйте токены и приватные raw-данные.
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Expected behavior
+      label: Ожидаемое поведение
     validations:
       required: true

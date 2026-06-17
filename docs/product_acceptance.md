@@ -1,10 +1,10 @@
-# Streamify Local Product Acceptance
+# Приемка локального продукта
 
-This document maps the MVP requirements to concrete repository artifacts and verification commands. The local product is considered ready for sample metadata after `make test` passes. It is considered ready for a real account only after `make acceptance-real` passes with a valid `YANDEX_MUSIC_TOKEN`.
+Этот документ связывает требования MVP с файлами репозитория и командами проверки. Локальный продукт считается готовым на sample-данных после успешного `make test`. Реальный аккаунт считается проверенным только после `make acceptance-real` с валидным `YANDEX_MUSIC_TOKEN`.
 
-## Requirement Matrix
+## Матрица требований
 
-| Requirement | Implementation Evidence | Verification |
+| Требование | Где реализовано | Проверка |
 | --- | --- | --- |
 | Fully local run without cloud services | `Makefile`, `docker-compose.local.yml`, `dbt/profiles.yml` local DuckDB target | `make acceptance-local`, `make compose-smoke-local` |
 | Local operator entrypoint | `make help` lists sample, real-account, Docker, export, readiness and cleanup commands | `make help` |
@@ -21,14 +21,14 @@ This document maps the MVP requirements to concrete repository artifacts and ver
 | Empty/private account handling | typed empty raw files and empty dbt smoke | `scripts/smoke_empty_yamusic_dbt.py`, `make test` |
 | Token safety | `.env.example`, `.gitignore`, no token in manifest/report/status, preflight without raw writes | `make status`, `make preflight`, `scripts/check_no_local_sensitive_artifacts.py` |
 
-## Current Acceptance Status
+## Текущий статус приемки
 
-Sample metadata path:
+Путь на sample metadata:
 
 - `make acceptance-local` proves local ingestion, raw contract, DuckDB/dbt marts, doctor, report, readiness and dashboard startup.
 - `make test` proves static contracts, safety guards, empty-account handling, sample acceptance, Python unit tests, Compose config and Compose local smoke.
 
-Real account path:
+Путь на реальном аккаунте:
 
 - A valid `YANDEX_MUSIC_TOKEN` in `.env` is still required to prove real-account ingestion.
 - The final real-account command is:
@@ -40,9 +40,9 @@ make dashboard
 
 The readiness audit must report `"real_account_verified": true` before the real-account MVP is considered proven. `make acceptance-real` enforces this through `make readiness-real`, which runs `scripts/audit_yamusic_readiness.py --require-real`.
 
-## Product Answers Covered
+## Продуктовые вопросы
 
-| User question | Primary artifact |
+| Вопрос пользователя | Основной артефакт |
 | --- | --- |
 | Who are my strongest artists? | `yamusic_artist_affinity`, dashboard Artists tab |
 | Which tracks repeat across library contexts? | `yamusic_track_signals.repeat_signal`, dashboard Tracks tab |
@@ -56,7 +56,7 @@ The readiness audit must report `"real_account_verified": true` before the real-
 | Is my local data trustworthy? | dashboard Data Quality tab, JSON snapshot quality block, `make doctor`, `make readiness` |
 | Can Streamify analyze music by where I was? | Future-only contract in `docs/location_enrichment.md`; not part of current acceptance |
 
-## Known Product Limits
+## Известные ограничения
 
 - Yandex Music availability depends on the unofficial `yandex-music` package and account-visible metadata.
 - Listening timestamps/history are used only when exposed by the account/API response; otherwise the product falls back to liked-track and playlist-membership events.

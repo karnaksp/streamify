@@ -1,10 +1,10 @@
-# Local Yandex Music Analytics
+# Локальная аналитика Яндекс Музыки
 
-Streamify builds a personal music self-analytics lakehouse from Yandex Music metadata. It is designed to run on a laptop without cloud credentials or cloud spend.
+Streamify собирает личный music self-analytics lakehouse из метаданных Яндекс Музыки. Он рассчитан на запуск на ноутбуке, без cloud credentials и облачных расходов.
 
-No audio is downloaded, stored, transformed, or played by this project. The ingestion adapter only reads metadata exposed to the account by the Yandex Music client library.
+Проект не скачивает, не хранит, не преобразует и не воспроизводит аудио. Ingestion-адаптер читает только метаданные, доступные аккаунту через клиентскую библиотеку Яндекс Музыки.
 
-## Quick Start
+## Быстрый старт
 
 ```bash
 cp .env.example .env
@@ -28,7 +28,7 @@ make acceptance-real
 make dashboard
 ```
 
-## Yandex Music Token
+## Токен Яндекс Музыки
 
 Streamify does not ask for your Yandex password and does not fetch a token by itself. The installed `yandex-music` Python client accepts an existing OAuth token through `Client(token).init()`, but version 2.2.0 does not expose a `device_auth` helper.
 
@@ -40,7 +40,7 @@ Use an external Yandex Music OAuth token helper, then paste only the resulting t
 YANDEX_MUSIC_TOKEN=your_oauth_token_here
 ```
 
-Known community helper:
+Известный community helper:
 
 - `https://github.com/MarshalX/yandex-music-token`
 
@@ -97,7 +97,7 @@ For normal use, prefer `make dbt-build`: it runs `dbt deps` first, so a fresh ch
 
 See [Yandex Music Local Lineage](yamusic_lineage.md) for the raw-to-dashboard model catalog and product-question mapping.
 
-## Real Account Acceptance Check
+## Проверка реального аккаунта
 
 After setting `YANDEX_MUSIC_TOKEN`, a successful real-account run should satisfy this checklist:
 
@@ -122,7 +122,7 @@ Empty/private accounts are a supported state. The dbt smoke test builds against 
 - `_manifest.json`: source, generated timestamp, adapter/client metadata, row counts, JSONL checksums and output paths; it must not contain token material.
 - `_manifest.json.diagnostics`: aggregate skip/fallback counters for liked-track hydration, liked album/artist/playlist metadata, playlist hydration, playlist-track hydration, missing IDs, duplicate liked shortcuts and duplicate playlist-track memberships; these are counts only and do not store skipped object identifiers. A `*_fetch_failed` counter means full metadata enrichment failed after retries, not necessarily that the library row was dropped.
 
-## Product Answers
+## Продуктовые ответы
 
 The local marts are designed around practical self-analytics questions:
 
@@ -144,7 +144,7 @@ Location-aware analytics are intentionally out of scope for the current Yandex M
 - `data/streamify_snapshot.json`: schema-versioned JSON with profile metrics, raw counts, ingestion diagnostics, favorite artists/tracks, genre shifts, active periods, repeat tracks, playlist overlap, underrated candidates and next actions.
 - `data/recommendations/*.csv`: spreadsheet-friendly exports for top artists, rediscovery tracks, playlist cleanup, standout playlists and genre shifts.
 
-## Data Quality
+## Качество данных
 
 The local dbt layer checks:
 

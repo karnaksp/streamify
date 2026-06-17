@@ -44,12 +44,13 @@ Streamify показывает не только таблицы, а продук
 
 PAGES = [
     Page("Главная", ROOT / "README.md", "index.html", "Что это за продукт, как запустить и какую пользу он дает.", "overview"),
-    Page("Запуск", ROOT / "docs" / "yandex_music_local.md", "runbook.html", "Токен, локальный запуск, sample path и real-account acceptance.", "runbook"),
+    Page("Запуск", ROOT / "docs" / "yandex_music_local.md", "runbook.html", "Токен, локальный запуск, sample-режим и приемка реального аккаунта.", "runbook"),
     Page("Дашборд", None, "dashboard.html", "Скриншоты и ключевые экраны Streamlit-интерфейса.", "dashboard"),
     Page("Atlas + Гео", ROOT / "docs" / "location_enrichment.md", "location.html", "Как готовить будущие карты без опасных догадок о местоположении.", "atlas"),
-    Page("Поток данных", ROOT / "docs" / "yamusic_lineage.md", "lineage.html", "Raw, staging, marts и dashboard data flow.", "lineage"),
+    Page("Поток данных", ROOT / "docs" / "yamusic_lineage.md", "lineage.html", "Raw, staging, marts и поток данных до дашборда.", "lineage"),
     Page("Проверка", ROOT / "docs" / "product_acceptance.md", "acceptance.html", "Требования MVP и команды, которые их доказывают.", "quality"),
-    Page("Релизы", ROOT / "docs" / "release_process.md", "release.html", "Privacy-safe release flow и GitHub Pages workflow.", "release"),
+    Page("Проект", ROOT / "docs" / "project_management.md", "project.html", "Направления агентов, правила работы и план релизов.", "project"),
+    Page("Релизы", ROOT / "docs" / "release_process.md", "release.html", "Privacy-safe релизы и GitHub Pages workflow.", "release"),
     Page("Пример отчета", ROOT / "data" / "streamify_summary.md", "sample-summary.html", "Пример инсайтов, собранный на sample metadata.", "summary"),
 ]
 
@@ -62,11 +63,36 @@ def page_markdown(page: Page) -> str:
     return f"# {page.title}\n\nЗапустите `make report`, чтобы собрать эту страницу на sample metadata."
 
 
+DOC_LINKS = {
+    "docs/yandex_music_local.md": "runbook.html",
+    "docs/yamusic_lineage.md": "lineage.html",
+    "docs/product_acceptance.md": "acceptance.html",
+    "docs/location_enrichment.md": "location.html",
+    "docs/release_process.md": "release.html",
+    "docs/project_management.md": "project.html",
+    "data/streamify_summary.md": "sample-summary.html",
+}
+
+
+def rewrite_href(href: str) -> str:
+    normalized = href.lstrip("./")
+    if normalized in DOC_LINKS:
+        return DOC_LINKS[normalized]
+    if normalized.startswith("docs/releases/") and normalized.endswith(".md"):
+        return "release.html"
+    return href
+
+
+def link_to_html(match: re.Match[str]) -> str:
+    label, href = match.groups()
+    return f'<a href="{escape(rewrite_href(href), quote=True)}">{label}</a>'
+
+
 def inline_markdown(text: str) -> str:
     text = escape(text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
-    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
+    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", link_to_html, text)
     return text
 
 
